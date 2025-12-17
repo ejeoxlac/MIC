@@ -1,0 +1,30 @@
+[
+  {
+    "nombre": "Hospital General de Cabimas",
+    "lat": 10.400,
+    "lng": -71.450,
+    "servicios": ["Emergencias", "Cirugía", "Pediatría"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Centro Médico Cabimas",
+    "lat": 10.405,
+    "lng": -71.455,
+    "servicios": ["Consultas generales", "Laboratorio"],
+    "horarios": "Lunes-Viernes 8am-5pm"
+  },
+  {
+    "nombre": "Hospital Materno Infantil",
+    "lat": 10.395,
+    "lng": -71.440,
+    "servicios": ["Ginecología", "Neonatología"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Hospital Jose jose",
+    "lat": 10.38,
+    "lng": -71.440,
+    "servicios": ["Ginecología", "Neonatología"],
+    "horarios": "24/7"
+  }
+]
