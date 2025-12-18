@@ -1,0 +1,16 @@
+[
+  {
+    "nombre": "Estación de Bomberos Cabimas",
+    "lat": 10.401,
+    "lng": -71.449,
+    "servicios": ["Bomberos", "Rescate", "Emergencias"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Centro de Rescate Norte",
+    "lat": 10.407,
+    "lng": -71.453,
+    "servicios": ["Bomberos", "Primeros auxilios"],
+    "horarios": "24/7"
+  }
+]

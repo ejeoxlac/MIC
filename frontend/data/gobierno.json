@@ -1,0 +1,16 @@
+[
+  {
+    "nombre": "Alcaldía Bolivariana de Cabimas",
+    "lat": 10.392534,
+    "lng": -71.476986,
+    "servicios": ["Administración municipal", "Servicios públicos"],
+    "horarios": "Lunes-Viernes 8am-4pm"
+  },
+  {
+    "nombre": "Intendencia Municipal de Cabimas",
+    "lat": 10.390656,
+    "lng": -71.467910,
+    "servicios": ["Gobierno regional", "Trámites"],
+    "horarios": "Lunes-Viernes 7am-3pm"
+  }
+]

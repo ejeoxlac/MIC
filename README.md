@@ -5,7 +5,8 @@ Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubica
 ## Características
 
 - Mapa offline usando tiles descargados
-- Marcadores para hospitales con información de servicios y horarios
+- Filtro para alternar entre servicios de salud, seguridad, bomberos y gobierno
+- Marcadores con íconos personalizados: 🏥 (verde) para salud, 🚓 (azul) para seguridad, 🚒 (rojo) para bomberos, 🏛️ (morado) para gobierno
 - Pin personalizable y arrastrable para obtener coordenadas
 - Zoom limitado entre 13 y 16
 - Navegación restringida al área de Cabimas
@@ -27,7 +28,8 @@ Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubica
 
 ## Uso
 
+- Usa los botones de filtro en la parte superior izquierda para alternar entre "Salud", "Seguridad", "Bomberos" y "Gobierno"
 - Haz zoom y navega por el mapa de Cabimas
-- Haz clic en los pines de hospitales para ver información
-- Usa el botón "Agregar Pin" para colocar un marcador personalizable
+- Haz clic en los pines de hospitales o estaciones de policía para ver información
+- Usa el botón "Agregar Pin" para colocar un marcador personalizable; cambia a "Eliminar Pin" para removerlo
 - Arrastra el pin personalizado para actualizar coordenadas en tiempo real

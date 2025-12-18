@@ -1,0 +1,23 @@
+[
+  {
+    "nombre": "Estación de Policía Cabimas Centro",
+    "lat": 10.402,
+    "lng": -71.448,
+    "servicios": ["Policía", "Emergencias", "Denuncias"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Comisaría de Cabimas Norte",
+    "lat": 10.408,
+    "lng": -71.452,
+    "servicios": ["Policía", "Tránsito", "Investigaciones"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Punto de Control Sur",
+    "lat": 10.392,
+    "lng": -71.442,
+    "servicios": ["Seguridad vial", "Control de tránsito"],
+    "horarios": "24/7"
+  }
+]
