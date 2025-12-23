@@ -1,6 +1,6 @@
 # Mapa Interactivo de Hospitales en Cabimas
 
-Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubicaciones de hospitales locales.
+Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubicaciones de hospitales locales y otras entidades publicas.
 
 ## Características
 
