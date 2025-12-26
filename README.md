@@ -1,12 +1,14 @@
-# Mapa Interactivo de Hospitales en Cabimas
+# Mapa Interactivo de Cabimas
 
-Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubicaciones de hospitales locales y otras entidades publicas.
+<img width="1863" height="987" alt="image" src="https://github.com/user-attachments/assets/fdfcc5ab-660d-4068-b5f7-cbdf507840e7" />
+
+Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubicaciones de las entidades publicas de Cabimas.
 
 ## Características
 
 - Mapa offline usando tiles descargados
-- Filtro para alternar entre servicios de salud, seguridad, bomberos y gobierno
-- Marcadores con íconos personalizados: 🏥 (verde) para salud, 🚓 (azul) para seguridad, 🚒 (rojo) para bomberos, 🏛️ (morado) para gobierno
+- Filtro para alternar entre todos los servicios o los servicios de salud, seguridad, bomberos y gobierno
+- Marcadores con íconos personalizados: 🏥 (azul claro) para salud, 🚓 (azul) para seguridad, 🚒 (rojo claro) para bomberos, 🏛️ (morado) para gobierno
 - Pin personalizable y arrastrable para obtener coordenadas
 - Zoom limitado entre 13 y 16
 - Navegación restringida al área de Cabimas
@@ -28,8 +30,8 @@ Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubica
 
 ## Uso
 
-- Usa los botones de filtro en la parte superior izquierda para alternar entre "Salud", "Seguridad", "Bomberos" y "Gobierno"
+- Usa los botones de filtro en la parte izquierda para alternar entre "Todos los pines", "Salud", "Seguridad", "Bomberos" y "Gobierno"
 - Haz zoom y navega por el mapa de Cabimas
-- Haz clic en los pines de hospitales o estaciones de policía para ver información
+- Haz clic en los pines para ver información
 - Usa el botón "Agregar Pin" para colocar un marcador personalizable; cambia a "Eliminar Pin" para removerlo
 - Arrastra el pin personalizado para actualizar coordenadas en tiempo real
