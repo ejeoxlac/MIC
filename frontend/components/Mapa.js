@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -28,13 +28,13 @@ const createCustomIcon = (letter, color) => L.divIcon({
 const getIconForFilter = (filter) => {
   switch (filter) {
     case 'salud':
-      return createCustomIcon('🏥', '#28a745')
+      return createCustomIcon('🏥', '#74b9ff')
     case 'seguridad':
-      return createCustomIcon('🚓', '#007bff')
+      return createCustomIcon('🚓', '#0077b6')
     case 'bomberos':
-      return createCustomIcon('🚒', '#dc3545')
+      return createCustomIcon('🚒', '#ff7675')
     case 'gobierno':
-      return createCustomIcon('🏛️', '#6f42c1')
+      return createCustomIcon('🏛️', '#8b5cf6')
     default:
       return L.icon({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -47,119 +47,75 @@ const getIconForFilter = (filter) => {
   }
 }
 
-function FilterButtons({ filter, setFilter }) {
-  return (
-    <div style={{
-      position: 'absolute',
-      top: '80px',
-      left: '12px',
-      zIndex: 1000,
-      display: 'grid',
-      gap: '10px'
-    }}>
-      <button
-        onClick={() => setFilter('salud')}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: filter === 'salud' ? '#28a745' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Salud
-      </button>
-      <button
-        onClick={() => setFilter('seguridad')}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: filter === 'seguridad' ? '#28a745' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Seguridad
-      </button>
-      <button
-        onClick={() => setFilter('bomberos')}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: filter === 'bomberos' ? '#28a745' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Bomberos
-      </button>
-      <button
-        onClick={() => setFilter('gobierno')}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: filter === 'gobierno' ? '#28a745' : '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer'
-        }}
-      >
-        Gobierno
-      </button>
-    </div>
-  )
-}
-
-function AddMarkerButton({ customMarker, onAddMarker, onRemoveMarker }) {
+function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, setUpdatingZoom }) {
   const map = useMap()
 
-  const handleClick = () => {
-    if (customMarker) {
-      onRemoveMarker()
-    } else {
-      const center = map.getCenter()
-      onAddMarker([center.lat, center.lng])
+  useEffect(() => {
+    if (map) {
+      map.setZoom(zoom)
     }
-  }
+  }, [zoom, map])
 
-  return (
-    <button
-      onClick={handleClick}
-      style={{
-        position: 'absolute',
-        top: '12px',
-        left: '50px',
-        zIndex: 1000,
-        padding: '10px 20px',
-        backgroundColor: customMarker ? '#dc3545' : '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer'
-      }}
-    >
-      {customMarker ? 'Eliminar Pin' : 'Agregar Pin'}
-    </button>
-  )
+  useEffect(() => {
+    if (map && !updatingZoom) {
+      const handleZoom = () => {
+        setUpdatingZoom(true)
+        const currentZoom = map.getZoom()
+        setZoom(currentZoom)
+        setTargetZoom(currentZoom)
+        setUpdatingZoom(false)
+      }
+
+      map.on('zoomend', handleZoom)
+
+      return () => {
+        map.off('zoomend', handleZoom)
+      }
+    }
+  }, [map, setZoom, setTargetZoom, setUpdatingZoom, updatingZoom])
+
+  return null
 }
 
-export default function Mapa() {
+function Mapa() {
   const [customMarker, setCustomMarker] = useState(null)
-  const [filter, setFilter] = useState('salud')
+  const [filters, setFilters] = useState(['salud', 'seguridad', 'bomberos', 'gobierno'])
+  const [zoom, setZoom] = useState(14)
+  const [targetZoom, setTargetZoom] = useState(14)
+  const [updatingZoom, setUpdatingZoom] = useState(false)
+  const mapRef = useRef(null)
   const center = [10.4, -71.45]
-  const zoom = 14
   const maxBounds = [[10.3, -71.55], [10.5, -71.35]]
 
-  const addMarker = (position) => {
-    setCustomMarker(position)
-  }
-
-  const removeMarker = () => {
-    setCustomMarker(null)
-  }
+  // Efecto para escuchar eventos personalizados para agregar y quitar marcadores
+  useEffect(() => {
+    const handleAddMarker = () => {
+      // Obtener el centro actual del mapa
+      const map = mapRef.current
+      if (map) {
+        const center = map.getCenter()
+        const newMarker = [center.lat, center.lng]
+        setCustomMarker(null) // Primero limpiar para forzar re-render
+        setTimeout(() => {
+          setCustomMarker(newMarker) // Luego agregar el nuevo marcador
+        }, 10)
+      }
+    }
+    
+    const handleRemoveMarker = () => {
+      setCustomMarker(null)
+    }
+    
+    // Agregar listeners para los eventos personalizados
+    window.addEventListener('add-marker', handleAddMarker)
+    window.addEventListener('remove-marker', handleRemoveMarker)
+    
+    // Limpiar listeners cuando el componente se desmonte
+    return () => {
+      window.removeEventListener('add-marker', handleAddMarker)
+      window.removeEventListener('remove-marker', handleRemoveMarker)
+    }
+  }, [])
 
   const handleDragEnd = (e) => {
     const marker = e.target
@@ -167,28 +123,165 @@ export default function Mapa() {
     setCustomMarker([position.lat, position.lng])
   }
 
-  const getMarkers = () => {
-    if (filter === 'salud') {
-      return hospitales
-    } else if (filter === 'seguridad') {
-      return seguridad
-    } else if (filter === 'bomberos') {
-      return bomberos
-    } else if (filter === 'gobierno') {
-      return gobierno
+  useEffect(() => {
+    const handleZoomChange = (e) => {
+      const newZoom = parseInt(e.target.value)
+      setTargetZoom(newZoom)
     }
-    return []
+
+    const handleFilterChange = (e) => {
+      const { id, checked } = e.target
+      let updatedFilters = [...filters]
+      if (id === 'todos-checkbox') {
+        if (checked) {
+          updatedFilters = ['salud', 'seguridad', 'bomberos', 'gobierno']
+        } else {
+          updatedFilters = []
+        }
+      } else {
+        if (checked) {
+          updatedFilters.push(id.replace('-checkbox', ''))
+        } else {
+          updatedFilters = updatedFilters.filter(f => f !== id.replace('-checkbox', ''))
+        }
+      }
+      setFilters(updatedFilters)
+    }
+
+    const zoomRange = document.getElementById('zoom-range')
+    const todosCheckbox = document.getElementById('todos-checkbox')
+    const saludCheckbox = document.getElementById('salud-checkbox')
+    const seguridadCheckbox = document.getElementById('seguridad-checkbox')
+    const bomberosCheckbox = document.getElementById('bomberos-checkbox')
+    const gobiernoCheckbox = document.getElementById('gobierno-checkbox')
+
+    if (zoomRange) {
+      zoomRange.addEventListener('input', handleZoomChange)
+    }
+
+    if (todosCheckbox) {
+      todosCheckbox.addEventListener('change', handleFilterChange)
+    }
+
+    if (saludCheckbox) {
+      saludCheckbox.addEventListener('change', handleFilterChange)
+    }
+
+    if (seguridadCheckbox) {
+      seguridadCheckbox.addEventListener('change', handleFilterChange)
+    }
+
+    if (bomberosCheckbox) {
+      bomberosCheckbox.addEventListener('change', handleFilterChange)
+    }
+
+    if (gobiernoCheckbox) {
+      gobiernoCheckbox.addEventListener('change', handleFilterChange)
+    }
+
+    return () => {
+      if (zoomRange) {
+        zoomRange.removeEventListener('input', handleZoomChange)
+      }
+      if (todosCheckbox) {
+        todosCheckbox.removeEventListener('change', handleFilterChange)
+      }
+      if (saludCheckbox) {
+        saludCheckbox.removeEventListener('change', handleFilterChange)
+      }
+      if (seguridadCheckbox) {
+        seguridadCheckbox.removeEventListener('change', handleFilterChange)
+      }
+      if (bomberosCheckbox) {
+        bomberosCheckbox.removeEventListener('change', handleFilterChange)
+      }
+      if (gobiernoCheckbox) {
+        gobiernoCheckbox.removeEventListener('change', handleFilterChange)
+      }
+    }
+  }, [filters])
+
+  useEffect(() => {
+    if (zoom !== targetZoom) {
+      const timeoutId = setTimeout(() => {
+        const diff = targetZoom - zoom
+        const step = diff > 0 ? 1 : -1
+        setZoom(prevZoom => prevZoom + step)
+      }, 100)
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [zoom, targetZoom])
+
+  useEffect(() => {
+    const todosCheckbox = document.getElementById('todos-checkbox')
+    const saludCheckbox = document.getElementById('salud-checkbox')
+    const seguridadCheckbox = document.getElementById('seguridad-checkbox')
+    const bomberosCheckbox = document.getElementById('bomberos-checkbox')
+    const gobiernoCheckbox = document.getElementById('gobierno-checkbox')
+
+    if (todosCheckbox) {
+      todosCheckbox.checked = filters.length === 4
+    }
+
+    if (saludCheckbox) {
+      saludCheckbox.checked = filters.includes('salud')
+    }
+
+    if (seguridadCheckbox) {
+      seguridadCheckbox.checked = filters.includes('seguridad')
+    }
+
+    if (bomberosCheckbox) {
+      bomberosCheckbox.checked = filters.includes('bomberos')
+    }
+
+    if (gobiernoCheckbox) {
+      gobiernoCheckbox.checked = filters.includes('gobierno')
+    }
+  }, [filters])
+
+  useEffect(() => {
+    const zoomRange = document.getElementById('zoom-range')
+    if (zoomRange) {
+      zoomRange.value = zoom
+    }
+  }, [zoom])
+
+  const getMarkers = () => {
+    let markers = []
+    if (filters.includes('salud')) {
+      markers = markers.concat(hospitales.map(item => ({ ...item, type: 'salud' })))
+    }
+    if (filters.includes('seguridad')) {
+      markers = markers.concat(seguridad.map(item => ({ ...item, type: 'seguridad' })))
+    }
+    if (filters.includes('bomberos')) {
+      markers = markers.concat(bomberos.map(item => ({ ...item, type: 'bomberos' })))
+    }
+    if (filters.includes('gobierno')) {
+      markers = markers.concat(gobierno.map(item => ({ ...item, type: 'gobierno' })))
+    }
+    return markers
   }
 
   return (
     <div style={{ position: 'relative', height: '100vh' }}>
-      <MapContainer center={center} zoom={zoom} minZoom={13} maxZoom={16} maxBounds={maxBounds} style={{ height: '100%', width: '100%' }}>
+      <MapContainer 
+        center={center} 
+        zoom={zoom} 
+        minZoom={13} 
+        maxZoom={16} 
+        maxBounds={maxBounds} 
+        style={{ height: '100%', width: '100%' }}
+        ref={mapRef}
+      >
         <TileLayer
           url="/tile/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {getMarkers().map((item, index) => (
-          <Marker key={index} position={[item.lat, item.lng]} icon={getIconForFilter(filter)}>
+          <Marker key={index} position={[item.lat, item.lng]} icon={getIconForFilter(item.type)}>
             <Popup>
               <h3>{item.nombre}</h3>
               <p><strong>Servicios:</strong> {item.servicios.join(', ')}</p>
@@ -200,18 +293,26 @@ export default function Mapa() {
           <Marker
             position={customMarker}
             draggable={true}
+            icon={L.divIcon({
+              html: `<div style="color: #ff6b6b; font-size: 30px; text-shadow: 0 2px 5px rgba(0,0,0,0.3);">📍</div>`,
+              className: 'custom-marker',
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+            })}
             eventHandlers={{
               dragend: handleDragEnd,
             }}
           >
             <Popup>
               <p>Coordenadas: {customMarker[0].toFixed(6)}, {customMarker[1].toFixed(6)}</p>
+              <p>Este es un marcador personalizado. Puedes arrastrarlo para cambiar su posición.</p>
             </Popup>
           </Marker>
         )}
-        <AddMarkerButton customMarker={customMarker} onAddMarker={addMarker} onRemoveMarker={removeMarker} />
+        <MapUpdater zoom={zoom} targetZoom={targetZoom} setZoom={setZoom} setTargetZoom={setTargetZoom} updatingZoom={updatingZoom} setUpdatingZoom={setUpdatingZoom} />
       </MapContainer>
-      <FilterButtons filter={filter} setFilter={setFilter} />
     </div>
   )
 }
+
+export default Mapa

@@ -11,13 +11,13 @@ body {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: #333;
   background: linear-gradient(
       to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+      #e6f7ff,
+      #b3e0ff
+    );
+  font-family: Arial, sans-serif;
 }
 
 a {
@@ -29,4 +29,72 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+/* Estilos para el menú desplegable */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: #e6f7ff;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown:hover .dropdown-button {
+  background-color: #0056b3;
+}
+
+/* Estilos para el mapa */
+.leaflet-container {
+  transition: zoom 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background-color: #87CEEB;
+}
+
+.leaflet-tile-pane {
+  background-color: #87CEEB;
+}
+
+.leaflet-tile-container {
+  background-color: #87CEEB;
+}
+
+.leaflet-tile {
+  background-color: #87CEEB;
+}
+
+/* Estilos para la barra de zoom */
+input[type="range"] {
+  transition: transform 0.1s ease;
 }
