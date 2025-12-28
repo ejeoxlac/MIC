@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
+import { FiMenu, FiX } from 'react-icons/fi'
 import Sidebar from '../components/Sidebar'
 
 const Mapa = dynamic(() => import('../components/Mapa'), { ssr: false })
@@ -15,6 +16,8 @@ export default function Home() {
   const [vehiculosActivos, setVehiculosActivos] = useState(false)
   const [vehiculosConRutasSalvasActivos, setVehiculosConRutasSalvasActivos] = useState(false)
   const [filters, setFilters] = useState(['salud', 'seguridad', 'bomberos', 'gobierno'])
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
   const handleFilterChange = (filterId) => {
     if (filterId === 'todos') {
@@ -52,6 +55,26 @@ export default function Home() {
     window.dispatchEvent(event)
     setHasTiempoMedio(false)
   }
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  useEffect(() => {
+    // Detectar tamaño de pantalla
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     // Escuchar cuando se agrega un marcador
@@ -146,62 +169,150 @@ export default function Home() {
   }, [])
   
   return (
-    <main style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar
-        hasMarker={hasMarker}
-        tiempoMedioActive={tiempoMedioActive}
-        hasTiempoMedio={hasTiempoMedio}
-        hasRutasAleatorias={hasRutasAleatorias}
-        hasRutasSalvas={hasRutasSalvas}
-        vehiculosActivos={vehiculosActivos}
-        vehiculosConRutasSalvasActivos={vehiculosConRutasSalvasActivos}
-        filters={filters}
-        onAddMarker={handleAddMarker}
-        onRemoveMarker={handleRemoveMarker}
-        onToggleTiempoMedio={() => {
-          const event = new CustomEvent('toggle-tiempo-medio')
-          window.dispatchEvent(event)
-        }}
-        onClearTiempoMedio={handleClearTiempoMedio}
-        onGenerarRutasAleatorias={() => {
-          const event = new CustomEvent('generar-rutas-aleatorias')
-          window.dispatchEvent(event)
-        }}
-        onLimpiarRutasAleatorias={() => {
-          const event = new CustomEvent('limpiar-rutas-aleatorias')
-          window.dispatchEvent(event)
-        }}
-        onCargarRutasSalvas={() => {
-          const event = new CustomEvent('cargar-rutas-salvas')
-          window.dispatchEvent(event)
-        }}
-        onLimpiarRutasSalvas={() => {
-          const event = new CustomEvent('limpiar-rutas-salvas')
-          window.dispatchEvent(event)
-        }}
-        onToggleVehiculos={() => {
-          if (vehiculosActivos) {
-            const event = new CustomEvent('desactivar-vehiculos')
-            window.dispatchEvent(event)
-          } else {
-            const event = new CustomEvent('activar-vehiculos')
-            window.dispatchEvent(event)
-          }
-        }}
-        onToggleVehiculosConRutasSalvas={() => {
-          if (vehiculosConRutasSalvasActivos) {
-            const event = new CustomEvent('desactivar-vehiculos-con-rutas-salvas')
-            window.dispatchEvent(event)
-          } else {
-            const event = new CustomEvent('activar-vehiculos-con-rutas-salvas')
-            window.dispatchEvent(event)
-          }
-        }}
-        onFilterChange={handleFilterChange}
-      />
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <Mapa />
-      </div>
-    </main>
+    <>
+      {/* Menú hamburguesa solo en móvil */}
+      {isMobile && (
+        <button
+          className="hamburger-button"
+          onClick={toggleMobileMenu}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 1001,
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            width: '48px',
+            height: '48px',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-primary)',
+            transition: 'all 0.2s ease'
+          }}
+          aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+        >
+          {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        </button>
+      )}
+
+      {/* Overlay para móvil */}
+      {isMobile && isMobileMenuOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 998
+          }}
+          onClick={closeMobileMenu}
+        />
+      )}
+      
+      <main style={{ 
+        display: 'flex', 
+        height: '100vh', 
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        {/* Sidebar */}
+        <div style={{
+          transition: isMobile ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+          transform: isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 0 : 'auto',
+          left: isMobile ? 0 : 'auto',
+          zIndex: isMobile ? 999 : 'auto',
+          height: isMobile ? '100vh' : 'auto',
+          width: isMobile ? '85vw' : '280px',
+          maxWidth: isMobile ? '320px' : 'none'
+        }}>
+          <Sidebar
+            hasMarker={hasMarker}
+            tiempoMedioActive={tiempoMedioActive}
+            hasTiempoMedio={hasTiempoMedio}
+            hasRutasAleatorias={hasRutasAleatorias}
+            hasRutasSalvas={hasRutasSalvas}
+            vehiculosActivos={vehiculosActivos}
+            vehiculosConRutasSalvasActivos={vehiculosConRutasSalvasActivos}
+            filters={filters}
+            onAddMarker={() => {
+              handleAddMarker()
+              if (isMobile) closeMobileMenu()
+            }}
+            onRemoveMarker={() => {
+              handleRemoveMarker()
+              if (isMobile) closeMobileMenu()
+            }}
+            onToggleTiempoMedio={() => {
+              const event = new CustomEvent('toggle-tiempo-medio')
+              window.dispatchEvent(event)
+              if (isMobile) closeMobileMenu()
+            }}
+            onClearTiempoMedio={() => {
+              handleClearTiempoMedio()
+              if (isMobile) closeMobileMenu()
+            }}
+            onGenerarRutasAleatorias={() => {
+              const event = new CustomEvent('generar-rutas-aleatorias')
+              window.dispatchEvent(event)
+              if (isMobile) closeMobileMenu()
+            }}
+            onLimpiarRutasAleatorias={() => {
+              const event = new CustomEvent('limpiar-rutas-aleatorias')
+              window.dispatchEvent(event)
+              if (isMobile) closeMobileMenu()
+            }}
+            onCargarRutasSalvas={() => {
+              const event = new CustomEvent('cargar-rutas-salvas')
+              window.dispatchEvent(event)
+              if (isMobile) closeMobileMenu()
+            }}
+            onLimpiarRutasSalvas={() => {
+              const event = new CustomEvent('limpiar-rutas-salvas')
+              window.dispatchEvent(event)
+              if (isMobile) closeMobileMenu()
+            }}
+            onToggleVehiculos={() => {
+              if (vehiculosActivos) {
+                const event = new CustomEvent('desactivar-vehiculos')
+                window.dispatchEvent(event)
+              } else {
+                const event = new CustomEvent('activar-vehiculos')
+                window.dispatchEvent(event)
+              }
+              if (isMobile) closeMobileMenu()
+            }}
+            onToggleVehiculosConRutasSalvas={() => {
+              if (vehiculosConRutasSalvasActivos) {
+                const event = new CustomEvent('desactivar-vehiculos-con-rutas-salvas')
+                window.dispatchEvent(event)
+              } else {
+                const event = new CustomEvent('activar-vehiculos-con-rutas-salvas')
+                window.dispatchEvent(event)
+              }
+              if (isMobile) closeMobileMenu()
+            }}
+            onFilterChange={handleFilterChange}
+            isMobile={isMobile}
+            onClose={isMobile ? closeMobileMenu : undefined}
+          />
+        </div>
+        
+        <div style={{ 
+          flex: 1, 
+          position: 'relative', 
+          overflow: 'hidden'
+        }}>
+          <Mapa />
+        </div>
+      </main>
+    </>
   )
 }

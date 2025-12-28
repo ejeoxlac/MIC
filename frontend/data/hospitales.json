@@ -1,30 +1,100 @@
 [
   {
-    "nombre": "Hospital General de Cabimas",
-    "lat": 10.400,
-    "lng": -71.450,
-    "servicios": ["Emergencias", "Cirugía", "Pediatría"],
+    "nombre": "Hospital El Rosario",
+    "lat": 10.382762,
+    "lng": -71.437247,
+    "servicios": [""],
     "horarios": "24/7"
   },
   {
-    "nombre": "Centro Médico Cabimas",
-    "lat": 10.405,
-    "lng": -71.455,
-    "servicios": ["Consultas generales", "Laboratorio"],
+    "nombre": "Clínica PDVSA",
+    "lat": 10.379618,
+    "lng": -71.452308,
+    "servicios": [""],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Centro Medico Cabimas S.A.",
+    "lat": 10.391479,
+    "lng": -71.458488,
+    "servicios": [""],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Centro Clinico Lombardi",
+    "lat": 10.372694,
+    "lng": -71.435379,
+    "servicios": [""],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Clínica Popular",
+    "lat": 10.359797,
+    "lng": -71.432889,
+    "servicios": [""],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Clínica Sucre",
+    "lat": 10.402,
+    "lng": -71.448,
+    "servicios": ["Consultas médicas", "Pediatría", "Ginecología"],
+    "horarios": "Lunes-Viernes 7am-7pm, Sábados 8am-5pm"
+  },
+  {
+    "nombre": "Centro Médico Dr. Américo Babún",
+    "lat": 10.398,
+    "lng": -71.445,
+    "servicios": ["Cardiología", "Emergencias", "Cirugía"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Clínica La Candelaria",
+    "lat": 10.392,
+    "lng": -71.458,
+    "servicios": ["Medicina General", "Laboratorio clínico"],
     "horarios": "Lunes-Viernes 8am-5pm"
   },
   {
-    "nombre": "Hospital Materno Infantil",
-    "lat": 10.395,
-    "lng": -71.440,
-    "servicios": ["Ginecología", "Neonatología"],
+    "nombre": "Hospital Clínico Quirúrgico",
+    "lat": 10.405,
+    "lng": -71.442,
+    "servicios": ["Cirugía general", "Traumatología", "Emergencias"],
     "horarios": "24/7"
   },
   {
-    "nombre": "Hospital Jose jose",
-    "lat": 10.38,
-    "lng": -71.440,
-    "servicios": ["Ginecología", "Neonatología"],
+    "nombre": "Instituto Médico Quirúrgico",
+    "lat": 10.401,
+    "lng": -71.455,
+    "servicios": ["Cirugía especializada", "Medicina interna"],
+    "horarios": "Lunes-Viernes 8am-6pm"
+  },
+  {
+    "nombre": "Clínica San Rafael",
+    "lat": 10.396,
+    "lng": -71.446,
+    "servicios": ["Medicina general", "Pediatría", "Ginecología"],
+    "horarios": "Lunes-Sábado 8am-6pm"
+  },
+  {
+    "nombre": "Centro de Especialidades Médicas",
+    "lat": 10.403,
+    "lng": -71.450,
+    "servicios": ["Especialidades múltiples", "Consultas externas"],
+    "horarios": "Lunes-Viernes 8am-5pm"
+  },
+  {
+    "nombre": "Clínica del Caribe",
+    "lat": 10.388,
+    "lng": -71.453,
+    "servicios": ["Emergencias", "Medicina interna", "Cirugía"],
+    "horarios": "24/7"
+  },
+  {
+    "nombre": "Hospital Regional de Cabimas",
+    "lat": 10.410,
+    "lng": -71.460,
+    "servicios": ["Emergencias", "Todas las especialidades"],
     "horarios": "24/7"
   }
 ]

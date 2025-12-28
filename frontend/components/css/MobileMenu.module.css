@@ -1,0 +1,144 @@
+/* Botón hamburguesa */
+.hamburgerButton {
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+.hamburgerButton:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+.hamburgerButton:active {
+  transform: scale(0.95);
+}
+
+.hamburgerButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Panel móvil */
+.mobilePanel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: var(--bg-primary);
+  z-index: 999;
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cuando el menú está abierto */
+:global(.mobile-menu-open) .mobilePanel {
+  transform: translateX(0);
+}
+
+.panelContent {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileHeader {
+  padding: 24px 20px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobileTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.mobileSubtitle {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+  .hamburgerButton {
+    display: flex;
+  }
+
+  .mobilePanel {
+    width: 85vw;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hamburgerButton {
+    top: 15px;
+    left: 15px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .hamburgerButton svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobilePanel {
+    width: 100vw;
+  }
+
+  .mobileHeader {
+    padding: 20px 16px;
+  }
+
+  .mobileTitle {
+    font-size: 20px;
+  }
+
+  .mobileSubtitle {
+    font-size: 13px;
+  }
+}

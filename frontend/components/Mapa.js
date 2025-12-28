@@ -116,7 +116,7 @@ const getIconForFilter = (filter) => {
 }
 
 // Componente para veículo animado
-function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta }) {
+function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMobile }) {
   // Sempre chamar todos os hooks antes de qualquer retorno antecipado
   const [posicion, setPosicion] = useState(vehiculo.posicionInicial || [0, 0])
   const [status, setStatus] = useState('En movimiento')
@@ -447,7 +447,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta }) {
           }
         }}
       >
-        {!popupOpen && (
+        {!popupOpen && !isMobile && (
           <Tooltip 
             ref={tooltipRef}
             permanent={false} 
@@ -493,7 +493,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta }) {
 }
 
 // Componente para veículo com rota salva (rota visível apenas no click)
-function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta }) {
+function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMobile }) {
   const [posicion, setPosicion] = useState(vehiculo.posicionInicial || [0, 0])
   const [status, setStatus] = useState('En movimiento')
   const [popupOpen, setPopupOpen] = useState(false)
@@ -740,7 +740,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta }
           }
         }}
       >
-        {!popupOpen && (
+        {!popupOpen && !isMobile && (
           <Tooltip 
             ref={tooltipRef}
             permanent={false} 
@@ -814,7 +814,7 @@ function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, se
   return null
 }
 
-function MarkerWithTooltip({ item, index }) {
+function MarkerWithTooltip({ item, index, isMobile }) {
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
   const [popupOpen, setPopupOpen] = useState(false)
@@ -859,7 +859,7 @@ function MarkerWithTooltip({ item, index }) {
       icon={getIconForFilter(item.type)}
       ref={markerRef}
     >
-      {!popupOpen && (
+      {!popupOpen && !isMobile && (
         <Tooltip 
           ref={tooltipRef}
           direction="top" 
@@ -909,6 +909,7 @@ function Mapa() {
   const [targetZoom, setTargetZoom] = useState(14)
   const [updatingZoom, setUpdatingZoom] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const rutasAleatoriasRef = useRef([])
@@ -919,6 +920,36 @@ function Mapa() {
   useEffect(() => {
     rutasAleatoriasRef.current = rutasAleatorias
   }, [rutasAleatorias])
+
+  // Detectar si es un dispositivo móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      // Verificar por user agent
+      const userAgent = navigator.userAgent.toLowerCase()
+      const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'tablet']
+      const isMobileUserAgent = mobileKeywords.some(keyword => userAgent.includes(keyword))
+      
+      // Verificar por viewport width
+      const isMobileViewport = window.innerWidth <= 768
+      
+      // Verificar por capacidad táctil
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      
+      // Detectar dispositivos que no soportan hover
+      const noHover = window.matchMedia('(hover: none)').matches
+      
+      setIsMobile(isMobileUserAgent || (isMobileViewport && isTouchDevice) || noHover)
+    }
+    
+    checkIsMobile()
+    
+    // Escuchar cambios de tamaño de ventana
+    window.addEventListener('resize', checkIsMobile)
+    
+    return () => {
+      window.removeEventListener('resize', checkIsMobile)
+    }
+  }, [])
 
   // Asegurar que el componente solo se monte en el cliente
   useEffect(() => {
@@ -2428,7 +2459,7 @@ function Mapa() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {getMarkers().map((item, index) => (
-          <MarkerWithTooltip key={index} item={item} index={index} />
+          <MarkerWithTooltip key={index} item={item} index={index} isMobile={isMobile} />
         ))}
         {customMarker && (
           <Marker
@@ -2715,6 +2746,7 @@ function Mapa() {
               onLlegada={handleVehiculoLlegada}
               mostrarRuta={mostrarRuta}
               onToggleRuta={toggleRutaVehiculoAnimado}
+              isMobile={isMobile}
             />
           )
         })}
@@ -2727,6 +2759,7 @@ function Mapa() {
               onLlegada={handleVehiculoLlegada}
               mostrarRuta={mostrarRuta}
               onToggleRuta={toggleRutaVehiculo}
+              isMobile={isMobile}
             />
           )
         })}

@@ -513,11 +513,123 @@
   transition: color 0.3s ease;
 }
 
+/* Estilos para móvil */
+.mobileSidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1000;
+  max-height: none;
+  border-right: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.closeButton svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 50vh;
+  .sidebar:not(.mobileSidebar) {
+    display: none;
+  }
+  
+  .sidebarHeader {
+    padding: 20px 16px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .subtitle {
+    font-size: 13px;
+  }
+  
+  .sidebarContent {
+    padding: 16px;
+    gap: 20px;
+  }
+  
+  .section {
+    gap: 10px;
+  }
+  
+  .button {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  
+  .small {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .sidebarFooter {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebarHeader {
+    padding: 16px 12px;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+  
+  .subtitle {
+    font-size: 12px;
+  }
+  
+  .sidebarContent {
+    padding: 12px;
+    gap: 16px;
+  }
+  
+  .button {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  
+  .small {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .checkboxLabel {
+    padding: 6px 0;
+  }
+  
+  .checkboxText {
+    font-size: 13px;
+  }
+  
+  .sidebarFooter {
+    padding: 12px;
   }
 }

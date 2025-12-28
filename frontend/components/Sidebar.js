@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import styles from './Sidebar.module.css'
+import styles from './css/Sidebar.module.css'
 import { 
   FiSearch, 
   FiFilter, 
@@ -115,7 +115,8 @@ export default function Sidebar({
   onLimpiarRutasSalvas,
   onToggleVehiculos,
   onToggleVehiculosConRutasSalvas,
-  onFilterChange
+  onFilterChange,
+  isMobile = false,
 }) {
   const [addingMode, setAddingMode] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
@@ -197,20 +198,22 @@ export default function Sidebar({
   }, [])
 
   return (
-    <aside className={`${styles.sidebar} ${darkMode ? styles.darkMode : ''}`}>
+    <aside className={`${styles.sidebar} ${darkMode ? styles.darkMode : ''} ${isMobile ? styles.mobileSidebar : ''}`}>
       <div className={styles.sidebarHeader}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
           <div>
             <h1 className={styles.title}>Mapa Interactivo</h1>
             <p className={styles.subtitle}>Cabimas</p>
           </div>
-          <button
-            onClick={toggleDarkMode}
-            className={styles.themeToggle}
-            aria-label="Alternar modo escuro"
-          >
-            {darkMode ? <FiSun /> : <FiMoon />}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={toggleDarkMode}
+              className={styles.themeToggle}
+              aria-label="Alternar modo escuro"
+            >
+              {darkMode ? <FiSun /> : <FiMoon />}
+            </button>
+          </div>
         </div>
       </div>
 
