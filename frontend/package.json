@@ -6,13 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gerar-rotas": "node scripts/gerar-rotas.js"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "next": "14.0.0",
     "react": "^18",
     "react-dom": "^18",
-    "leaflet": "^1.9.4",
+    "react-icons": "^5.5.0",
     "react-leaflet": "^4.2.1"
   },
   "devDependencies": {

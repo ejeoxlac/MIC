@@ -1,3 +1,59 @@
+/* Variáveis CSS para cores profissionais */
+:root {
+  /* Modo Claro - Cores Profissionais */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #2563eb;
+  --accent-success: #10b981;
+  --accent-success-hover: #059669;
+  --accent-danger: #ef4444;
+  --accent-danger-hover: #dc2626;
+  --accent-warning: #f59e0b;
+  --accent-warning-hover: #d97706;
+  --accent-info: #06b6d4;
+  --accent-info-hover: #0891b2;
+  --accent-purple: #8b5cf6;
+  --accent-purple-hover: #7c3aed;
+  --accent-teal: #14b8a6;
+  --accent-teal-hover: #0d9488;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --border-color: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --accent-primary: #60a5fa;
+  --accent-primary-hover: #3b82f6;
+  --accent-success: #34d399;
+  --accent-success-hover: #10b981;
+  --accent-danger: #f87171;
+  --accent-danger-hover: #ef4444;
+  --accent-warning: #fbbf24;
+  --accent-warning-hover: #f59e0b;
+  --accent-info: #22d3ee;
+  --accent-info-hover: #06b6d4;
+  --accent-purple: #a78bfa;
+  --accent-purple-hover: #8b5cf6;
+  --accent-teal: #2dd4bf;
+  --accent-teal-hover: #14b8a6;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
 * {
   box-sizing: border-box;
   padding: 0;
@@ -18,6 +74,16 @@ body {
       #b3e0ff
     );
   font-family: Arial, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode {
+  color: #f1f5f9;
+  background: linear-gradient(
+      to bottom,
+      #0f172a,
+      #1e293b
+    );
 }
 
 a {
@@ -82,6 +148,11 @@ a {
   background-color: #87CEEB;
 }
 
+body.dark-mode .leaflet-container {
+  background-color: #1e293b;
+  filter: brightness(0.8) contrast(1.1);
+}
+
 .leaflet-tile-pane {
   background-color: #87CEEB;
 }
@@ -97,4 +168,16 @@ a {
 /* Estilos para la barra de zoom */
 input[type="range"] {
   transition: transform 0.1s ease;
+}
+
+/* Animación para el aviso de agregar pin */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateX(-50%) scale(1.02);
+  }
 }

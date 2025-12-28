@@ -1,0 +1,523 @@
+/* Sidebar Principal */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Header */
+.sidebarHeader {
+  padding: 24px 20px;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.3s ease;
+}
+
+:global(body.dark-mode) .sidebarHeader {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+.darkMode {
+  /* Classe local para modo escuro - as variáveis CSS são aplicadas via body.dark-mode */
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.themeToggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.themeToggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.themeToggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Content */
+.sidebarContent {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  transition: background-color 0.3s ease;
+}
+
+/* Seções */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.sectionIcon {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary);
+  transition: color 0.3s ease;
+}
+
+.sectionIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Zoom Controls */
+.zoomContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zoomSlider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.zoomSlider:hover {
+  background: var(--border-color);
+}
+
+.zoomSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+.zoomSlider::-webkit-slider-thumb:hover {
+  background: var(--accent-primary-hover);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.zoomSlider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  border: none;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+}
+
+.zoomSlider::-moz-range-thumb:hover {
+  background: var(--accent-primary-hover);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.zoomLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+/* Filtros */
+.filtersList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 0.2s ease;
+}
+
+.checkboxLabel:hover {
+  color: var(--accent-primary);
+}
+
+.checkbox {
+  display: none;
+}
+
+.checkboxCustom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+}
+
+.checkboxLabel:hover .checkboxCustom {
+  border-color: var(--accent-primary);
+}
+
+.checkbox:checked + .checkboxCustom {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.checkbox:checked + .checkboxCustom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkboxIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+
+.checkboxIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.checkboxLabel:hover .checkboxIcon {
+  color: var(--accent-primary);
+}
+
+.checkbox:checked + .checkboxCustom + .checkboxIcon {
+  color: var(--accent-primary);
+}
+
+.checkboxText {
+  font-size: 14px;
+  color: var(--text-primary);
+  user-select: none;
+  transition: color 0.3s ease;
+}
+
+.checkboxLabel:hover .checkboxText {
+  color: var(--accent-primary);
+}
+
+/* Botões */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.button:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.buttonIcon {
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttonIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.medium {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.small {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+/* Variantes de botões - Cores Profissionais */
+.primary {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+  color: white;
+}
+
+.primary:hover {
+  background: linear-gradient(135deg, var(--accent-primary-hover) 0%, #1d4ed8 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.success {
+  background: linear-gradient(135deg, var(--accent-success) 0%, var(--accent-success-hover) 100%);
+  color: white;
+}
+
+.success:hover {
+  background: linear-gradient(135deg, var(--accent-success-hover) 0%, #047857 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.danger {
+  background: linear-gradient(135deg, var(--accent-danger) 0%, var(--accent-danger-hover) 100%);
+  color: white;
+}
+
+.danger:hover {
+  background: linear-gradient(135deg, var(--accent-danger-hover) 0%, #b91c1c 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.primary-active {
+  background: linear-gradient(135deg, var(--accent-primary-hover) 0%, #1d4ed8 100%);
+  color: white;
+}
+
+.success-active {
+  background: linear-gradient(135deg, var(--accent-success-hover) 0%, #047857 100%);
+  color: white;
+}
+
+.danger-active {
+  background: linear-gradient(135deg, var(--accent-danger-hover) 0%, #b91c1c 100%);
+  color: white;
+}
+
+.danger-active:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+}
+
+.secondary {
+  background: var(--text-secondary);
+  color: white;
+}
+
+.secondary:hover {
+  background: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.purple {
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-purple-hover) 100%);
+  color: white;
+}
+
+.purple:hover {
+  background: linear-gradient(135deg, var(--accent-purple-hover) 0%, #6d28d9 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.teal {
+  background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-teal-hover) 100%);
+  color: white;
+}
+
+.teal:hover {
+  background: linear-gradient(135deg, var(--accent-teal-hover) 0%, #0f766e 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.info {
+  background: linear-gradient(135deg, var(--accent-info) 0%, var(--accent-info-hover) 100%);
+  color: white;
+}
+
+.info:hover {
+  background: linear-gradient(135deg, var(--accent-info-hover) 0%, #0e7490 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.warning {
+  background: linear-gradient(135deg, var(--accent-warning) 0%, var(--accent-warning-hover) 100%);
+  color: white;
+}
+
+.warning:hover {
+  background: linear-gradient(135deg, var(--accent-warning-hover) 0%, #b45309 100%);
+  box-shadow: var(--shadow-md);
+}
+
+/* Footer */
+.sidebarFooter {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  margin-top: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.githubLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 12px;
+  transition: color 0.2s ease;
+}
+
+.githubLink:hover {
+  color: var(--accent-primary-hover);
+}
+
+.footerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footerText {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.footerAuthor {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.footerAuthor strong {
+  font-weight: 600;
+  color: var(--accent-primary);
+  transition: color 0.3s ease;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+  }
+}
