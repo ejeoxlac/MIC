@@ -5,3 +5,6 @@
 
 # next.js
 /.next
+
+# Archivos de compilación caché de TypeScript
+*.tsbuildinfo
