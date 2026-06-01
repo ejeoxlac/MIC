@@ -1,0 +1,80 @@
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 200px;
+  pointer-events: none;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.row:last-child {
+  margin-bottom: 0;
+}
+
+.iconCircle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-block;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 20px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+}
+
+:global(body.dark-mode) .legend {
+  background: rgba(30, 41, 59, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+:global(body.dark-mode) .title {
+  color: #f1f5f9;
+}
+
+@media (max-width: 768px) {
+  .legend {
+    bottom: 12px;
+    left: 12px;
+    padding: 10px;
+    min-width: 170px;
+  }
+
+  .title {
+    font-size: 12px;
+  }
+
+  .chip {
+    font-size: 9px;
+    padding: 0 6px;
+  }
+}

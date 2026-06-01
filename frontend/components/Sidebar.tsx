@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import styles from './css/Sidebar.module.css'
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiMapPin, 
-  FiNavigation, 
-  FiShuffle, 
+import {
+  FiSearch,
+  FiFilter,
+  FiMapPin,
+  FiNavigation,
+  FiShuffle,
   FiFolder,
   FiX,
   FiPlus,
@@ -16,25 +16,47 @@ import {
   FiTruck,
   FiStopCircle,
   FiMoon,
-  FiSun
+  FiSun,
+  FiChevronDown,
+  FiChevronUp,
 } from 'react-icons/fi'
-import { 
+import {
   HiOutlineBuildingOffice2,
   HiOutlineShieldCheck,
   HiOutlineFire,
-  HiOutlineHome
+  HiOutlineHome,
 } from 'react-icons/hi2'
+import type { FilterCategory, MapStyle } from '../types/map'
 
-// Componente de botão reutilizável
-const ActionButton = ({ 
-  onClick, 
-  children, 
-  variant = 'primary', 
-  icon, 
+type ButtonVariant =
+  | 'primary'
+  | 'danger'
+  | 'success'
+  | 'secondary'
+  | 'purple'
+  | 'info'
+  | 'teal'
+  | 'warning'
+
+interface ActionButtonProps {
+  onClick: () => void
+  children: ReactNode
+  variant?: ButtonVariant
+  icon?: ReactNode
+  active?: boolean
+  size?: 'small' | 'medium'
+  fullWidth?: boolean
+}
+
+const ActionButton = ({
+  onClick,
+  children,
+  variant = 'primary',
+  icon,
   active = false,
   size = 'medium',
-  fullWidth = true 
-}) => {
+  fullWidth = true,
+}: ActionButtonProps) => {
   const variantClass = active ? `${variant}-active` : variant
   const sizeClass = size === 'small' ? styles.small : styles.medium
   return (
@@ -42,41 +64,48 @@ const ActionButton = ({
       onClick={onClick}
       className={`${styles.button} ${styles[variantClass]} ${sizeClass} ${fullWidth ? styles.fullWidth : ''}`}
     >
-      {icon && <span className={styles.buttonIcon}>{typeof icon === 'string' ? icon : icon}</span>}
+      {icon && <span className={styles.buttonIcon}>{icon}</span>}
       {children}
     </button>
   )
 }
 
-// Componente de seção
-const Section = ({ title, children, icon }) => (
+interface SectionProps {
+  title?: string
+  children: ReactNode
+  icon?: ReactNode
+}
+
+const Section = ({ title, children, icon }: SectionProps) => (
   <div className={styles.section}>
     {title && (
       <h3 className={styles.sectionTitle}>
-        {icon && <span className={styles.sectionIcon}>{typeof icon === 'string' ? icon : icon}</span>}
+        {icon && <span className={styles.sectionIcon}>{icon}</span>}
         {title}
       </h3>
     )}
-    <div className={styles.sectionContent}>
-      {children}
-    </div>
+    <div className={styles.sectionContent}>{children}</div>
   </div>
 )
 
-// Componente de checkbox customizado
-const Checkbox = ({ id, label, checked, onChange, icon }) => {
-  const handleClick = (e) => {
+interface CheckboxProps {
+  id: string
+  label: string
+  checked?: boolean
+  onChange?: () => void
+  icon?: ReactNode
+}
+
+const Checkbox = ({ id, label, checked, onChange, icon }: CheckboxProps) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    // Disparar o evento change no input real
-    const input = document.getElementById(id)
+    const input = document.getElementById(id) as HTMLInputElement | null
     if (input) {
-      const newChecked = !input.checked
-      input.checked = newChecked
-      // Disparar evento change que o Mapa.js está escutando
-      const changeEvent = new Event('change', { bubbles: true, cancelable: true })
-      input.dispatchEvent(changeEvent)
+      input.checked = !input.checked
+      input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }))
     }
+    onChange?.()
   }
 
   return (
@@ -84,16 +113,43 @@ const Checkbox = ({ id, label, checked, onChange, icon }) => {
       <input
         type="checkbox"
         id={id}
-        checked={checked}
-        onChange={() => {}} // Handler vazio, o evento é disparado manualmente
+        {...(checked !== undefined
+          ? { checked, readOnly: true }
+          : { defaultChecked: id === 'parroquias-checkbox' })}
+        onChange={() => {}}
         className={styles.checkbox}
-        readOnly
       />
       <span className={styles.checkboxCustom}></span>
       {icon && <span className={styles.checkboxIcon}>{icon}</span>}
       <span className={styles.checkboxText}>{label}</span>
     </label>
   )
+}
+
+export interface SidebarProps {
+  hasMarker: boolean
+  tiempoMedioActive: boolean
+  hasTiempoMedio: boolean
+  hasRutasAleatorias: boolean
+  hasRutasSalvas: boolean
+  vehiculosActivos: boolean
+  vehiculosConRutasSalvasActivos: boolean
+  filters?: FilterCategory[]
+  onAddMarker: () => void
+  onRemoveMarker: () => void
+  onToggleTiempoMedio: () => void
+  onClearTiempoMedio: () => void
+  onGenerarRutasAleatorias: () => void
+  onLimpiarRutasAleatorias: () => void
+  onCargarRutasSalvas: () => void
+  onLimpiarRutasSalvas: () => void
+  onToggleVehiculos: () => void
+  onToggleVehiculosConRutasSalvas: () => void
+  onFilterChange?: (filterId: FilterCategory | 'todos') => void
+  onMapStyleChange?: (style: MapStyle) => void
+  isMobile?: boolean
+  currentMapStyle?: MapStyle
+  onClose?: () => void
 }
 
 export default function Sidebar({
@@ -116,62 +172,58 @@ export default function Sidebar({
   onToggleVehiculos,
   onToggleVehiculosConRutasSalvas,
   onFilterChange,
+  onMapStyleChange,
   isMobile = false,
-}) {
+  currentMapStyle = 'local',
+}: SidebarProps) {
   const [addingMode, setAddingMode] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  
+  const [selectedMapStyle, setSelectedMapStyle] = useState<MapStyle>(currentMapStyle)
+  const [mapStyleCollapsed, setMapStyleCollapsed] = useState(true)
+
   useEffect(() => {
-    // Verificar preferência salva ou padrão do sistema
     const savedMode = localStorage.getItem('darkMode')
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const initialMode = savedMode ? savedMode === 'true' : prefersDark
     setDarkMode(initialMode)
-    
-    // Aplicar classe ao body
+
     if (initialMode) {
       document.body.classList.add('dark-mode')
     }
   }, [])
-  
+
+  useEffect(() => {
+    setSelectedMapStyle(currentMapStyle)
+  }, [currentMapStyle])
+
   const toggleDarkMode = () => {
     const newMode = !darkMode
     setDarkMode(newMode)
     localStorage.setItem('darkMode', newMode.toString())
-    
+
     if (newMode) {
       document.body.classList.add('dark-mode')
     } else {
       document.body.classList.remove('dark-mode')
     }
   }
-  
-  const handleFilterToggle = (filterId) => {
-    // Disparar evento diretamente no checkbox para garantir que o Mapa.js receba
-    if (filterId === 'todos') {
-      const checkbox = document.getElementById('todos-checkbox')
-      if (checkbox) {
-        const newChecked = !checkbox.checked
-        checkbox.checked = newChecked
-        // Disparar evento change que o Mapa.js está escutando
-        const changeEvent = new Event('change', { bubbles: true, cancelable: true })
-        checkbox.dispatchEvent(changeEvent)
-      }
-    } else {
-      const checkbox = document.getElementById(`${filterId}-checkbox`)
-      if (checkbox) {
-        const newChecked = !checkbox.checked
-        checkbox.checked = newChecked
-        // Disparar evento change que o Mapa.js está escutando
-        const changeEvent = new Event('change', { bubbles: true, cancelable: true })
-        checkbox.dispatchEvent(changeEvent)
-      }
+
+  const handleFilterToggle = (filterId: FilterCategory | 'todos') => {
+    const checkboxId = filterId === 'todos' ? 'todos-checkbox' : `${filterId}-checkbox`
+    const checkbox = document.getElementById(checkboxId) as HTMLInputElement | null
+    if (checkbox) {
+      checkbox.checked = !checkbox.checked
+      checkbox.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }))
     }
-    
-    // Também chamar o callback se existir
-    if (onFilterChange) {
-      onFilterChange(filterId)
-    }
+    onFilterChange?.(filterId)
+  }
+
+  const handleMapStyleChange = (newStyle: MapStyle) => {
+    setSelectedMapStyle(newStyle)
+    window.dispatchEvent(
+      new CustomEvent('map-style-changed', { detail: { style: newStyle } })
+    )
+    onMapStyleChange?.(newStyle)
   }
 
   const handleAddMarkerClick = () => {
@@ -198,9 +250,18 @@ export default function Sidebar({
   }, [])
 
   return (
-    <aside className={`${styles.sidebar} ${darkMode ? styles.darkMode : ''} ${isMobile ? styles.mobileSidebar : ''}`}>
+    <aside
+      className={`${styles.sidebar} ${darkMode ? styles.darkMode : ''} ${isMobile ? styles.mobileSidebar : ''}`}
+    >
       <div className={styles.sidebarHeader}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            width: '100%',
+          }}
+        >
           <div>
             <h1 className={styles.title}>Mapa Interactivo</h1>
             <p className={styles.subtitle}>Cabimas</p>
@@ -218,7 +279,6 @@ export default function Sidebar({
       </div>
 
       <div className={styles.sidebarContent}>
-        {/* Controles de Zoom */}
         <Section title="Zoom" icon={<FiSearch />}>
           <div className={styles.zoomContainer}>
             <input
@@ -236,47 +296,46 @@ export default function Sidebar({
           </div>
         </Section>
 
-        {/* Filtros */}
         <Section title="Filtros" icon={<FiFilter />}>
           <div className={styles.filtersList}>
-            <Checkbox 
-              id="todos-checkbox" 
-              label="Todos los pines" 
-              checked={filters ? filters.length === 4 : false}
+            <Checkbox
+              id="todos-checkbox"
+              label="Todos los pines"
+              checked={filters.length === 4}
               onChange={() => handleFilterToggle('todos')}
             />
-            <Checkbox 
-              id="salud-checkbox" 
-              label="Salud" 
-              checked={filters && filters.includes('salud')}
+            <Checkbox
+              id="salud-checkbox"
+              label="Salud"
+              checked={filters.includes('salud')}
               onChange={() => handleFilterToggle('salud')}
               icon={<HiOutlineHome />}
             />
-            <Checkbox 
-              id="seguridad-checkbox" 
-              label="Seguridad" 
-              checked={filters && filters.includes('seguridad')}
+            <Checkbox
+              id="seguridad-checkbox"
+              label="Seguridad"
+              checked={filters.includes('seguridad')}
               onChange={() => handleFilterToggle('seguridad')}
               icon={<HiOutlineShieldCheck />}
             />
-            <Checkbox 
-              id="bomberos-checkbox" 
-              label="Bomberos" 
-              checked={filters && filters.includes('bomberos')}
+            <Checkbox
+              id="bomberos-checkbox"
+              label="Bomberos"
+              checked={filters.includes('bomberos')}
               onChange={() => handleFilterToggle('bomberos')}
               icon={<HiOutlineFire />}
             />
-            <Checkbox 
-              id="gobierno-checkbox" 
-              label="Gobierno" 
-              checked={filters && filters.includes('gobierno')}
+            <Checkbox
+              id="gobierno-checkbox"
+              label="Gobierno"
+              checked={filters.includes('gobierno')}
               onChange={() => handleFilterToggle('gobierno')}
               icon={<HiOutlineBuildingOffice2 />}
             />
+            <Checkbox id="parroquias-checkbox" label="Límites de parroquias" onChange={() => {}} />
           </div>
         </Section>
 
-        {/* Marcadores */}
         <Section title="Marcadores" icon={<FiMapPin />}>
           <ActionButton
             onClick={handleAddMarkerClick}
@@ -287,7 +346,6 @@ export default function Sidebar({
           </ActionButton>
         </Section>
 
-        {/* Tiempo Medio */}
         <Section title="Rutas" icon={<FiNavigation />}>
           <ActionButton
             onClick={onToggleTiempoMedio}
@@ -308,13 +366,8 @@ export default function Sidebar({
           )}
         </Section>
 
-        {/* Rutas Aleatorias */}
         <Section title="Rutas Aleatorias" icon={<FiShuffle />}>
-          <ActionButton
-            onClick={onGenerarRutasAleatorias}
-            variant="purple"
-            icon={<FiShuffle />}
-          >
+          <ActionButton onClick={onGenerarRutasAleatorias} variant="purple" icon={<FiShuffle />}>
             Generar 10 Rutas
           </ActionButton>
           {hasRutasAleatorias && (
@@ -339,13 +392,8 @@ export default function Sidebar({
           )}
         </Section>
 
-        {/* Rutas Guardadas */}
         <Section title="Rutas Guardadas" icon={<FiFolder />}>
-          <ActionButton
-            onClick={onCargarRutasSalvas}
-            variant="teal"
-            icon={<FiFolder />}
-          >
+          <ActionButton onClick={onCargarRutasSalvas} variant="teal" icon={<FiFolder />}>
             Cargar Rutas
           </ActionButton>
           {hasRutasSalvas && (
@@ -369,6 +417,64 @@ export default function Sidebar({
             </>
           )}
         </Section>
+
+        <div className={`${styles.section} ${styles.mapStyleContainer}`}>
+          <h3
+            className={`${styles.sectionTitle} ${styles.collapsibleTitle}`}
+            onClick={() => setMapStyleCollapsed(!mapStyleCollapsed)}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className={styles.sectionIcon}>
+                <FiMapPin />
+              </span>
+              <span>Estilo de Mapa</span>
+            </div>
+            {mapStyleCollapsed ? <FiChevronDown /> : <FiChevronUp />}
+          </h3>
+
+          {!mapStyleCollapsed && (
+            <div className={styles.sectionContent}>
+              <div className={styles.mapStyleOptions}>
+                <Checkbox
+                  id="local-checkbox"
+                  label="💾 Local (offline)"
+                  checked={selectedMapStyle === 'local'}
+                  onChange={() => handleMapStyleChange('local')}
+                />
+                <Checkbox
+                  id="streets-checkbox"
+                  label="🗺️ Calles"
+                  checked={selectedMapStyle === 'streets'}
+                  onChange={() => handleMapStyleChange('streets')}
+                />
+                <Checkbox
+                  id="satellite-checkbox"
+                  label="🛰️ Satélite"
+                  checked={selectedMapStyle === 'satellite'}
+                  onChange={() => handleMapStyleChange('satellite')}
+                />
+                <Checkbox
+                  id="terrain-checkbox"
+                  label="🏔️ Terreno"
+                  checked={selectedMapStyle === 'terrain'}
+                  onChange={() => handleMapStyleChange('terrain')}
+                />
+                <Checkbox
+                  id="dark-checkbox"
+                  label="🌙 Oscuro"
+                  checked={selectedMapStyle === 'dark'}
+                  onChange={() => handleMapStyleChange('dark')}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={styles.sidebarFooter}>

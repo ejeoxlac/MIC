@@ -633,3 +633,60 @@
     padding: 12px;
   }
 }
+
+/* Estilos de mapa (selección exclusiva) */
+.mapStyleContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.collapsibleTitle {
+  user-select: none;
+}
+
+.mapStyleOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.mapStyleContainer .checkboxLabel {
+  padding: 12px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mapStyleContainer .checkboxLabel:hover {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+.mapStyleContainer .checkbox:checked + .checkboxCustom {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  transform: scale(1.1);
+}
+
+.mapStyleContainer .checkbox:checked + .checkboxCustom::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.mapStyleContainer .checkbox:checked ~ .checkboxText {
+  color: var(--accent-primary);
+  font-weight: 600;
+}

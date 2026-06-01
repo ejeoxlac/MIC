@@ -223,3 +223,34 @@ input[type="range"] {
     transform: translateX(-50%) scale(1.02);
   }
 }
+
+/* Capa de parroquias (GeoJSON) */
+.parroquia-label {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(30, 41, 59, 0.35) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  color: #1e293b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 3px 8px !important;
+  pointer-events: none !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+body.dark-mode .parroquia-label {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
+  color: #f1f5f9 !important;
+}
+
+.parroquia-popup strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.parroquia-popup span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}

@@ -1,7 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, Polyline, useMap } from 'react-leaflet'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Tooltip,
+  Polyline,
+  GeoJSON,
+  useMap,
+} from 'react-leaflet'
+import type { GeoJsonObject } from 'geojson'
+import type { LatLngTuple, Path, PathOptions } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { createRoot } from 'react-dom/client'
@@ -9,29 +20,168 @@ import hospitales from '../data/hospitales.json'
 import seguridad from '../data/seguridad.json'
 import bomberos from '../data/bomberos.json'
 import gobierno from '../data/gobierno.json'
+import parroquiasCombinadas from '../data/parroquias-combinadas.json'
+import type { FilterCategory, IconType, MapStyle } from '../types/map'
+import { ENTITY_LEGEND, getIconSVGPath } from '../lib/mapIcons'
+import MapLegend from './MapLegend'
+import '../types/events'
+
+const PARISH_PALETTE = [
+  { fill: '#3b82f6', stroke: '#1d4ed8' },
+  { fill: '#10b981', stroke: '#047857' },
+  { fill: '#f59e0b', stroke: '#b45309' },
+  { fill: '#8b5cf6', stroke: '#6d28d9' },
+  { fill: '#ef4444', stroke: '#b91c1c' },
+  { fill: '#06b6d4', stroke: '#0e7490' },
+  { fill: '#ec4899', stroke: '#be185d' },
+  { fill: '#84cc16', stroke: '#4d7c0f' },
+  { fill: '#f97316', stroke: '#c2410c' },
+]
+
+const getCheckbox = (id: string) =>
+  document.getElementById(id) as HTMLInputElement | null
+
+/** Compatibilidad react-leaflet v3/v4: el ref puede ser el layer o un wrapper con leafletElement */
+function getLeafletLayer<T>(ref: { leafletElement?: T } | T | null | undefined): T | null {
+  if (!ref) return null
+  if (typeof ref === 'object' && 'leafletElement' in ref && ref.leafletElement) {
+    return ref.leafletElement
+  }
+  return ref as T
+}
+
+const PARISH_DISPLAY_NAMES = {
+  AMBROSIO: 'Ambrosio',
+  'ARISTEDES CALVANI': 'Arístides Calvanni',
+  'CARMEN HERRERA': 'Carmen Herrera',
+  'GERMAN RIOS LINARES': 'Germán Ríos Linares',
+  'JORGE HERNANDEZ': 'Jorge Hernández',
+  'LA ROSA': 'La Rosa',
+  'PUNTA GORDA': 'Punta Gorda',
+  'ROMULO BETANCOURT': 'Rómulo Betancourt',
+  'SAN BENITO': 'San Benito',
+}
+
+const formatParishName = (raw: string | undefined) => {
+  if (!raw) return ''
+  return PARISH_DISPLAY_NAMES[raw as keyof typeof PARISH_DISPLAY_NAMES] || raw
+}
+
+const getParishStyle = (feature: GeoJSON.Feature): PathOptions => {
+  const cod = parseInt(feature.properties?.COD_PARROQ || '1', 10)
+  const { fill, stroke } = PARISH_PALETTE[(cod - 1) % PARISH_PALETTE.length]
+  return {
+    fillColor: fill,
+    color: stroke,
+    weight: 2.5,
+    opacity: 0.95,
+    fillOpacity: 0.28,
+  }
+}
+
+function MapInstanceSync({
+  mapRef,
+  mapInstanceRef,
+}: {
+  mapRef: React.MutableRefObject<L.Map | null>
+  mapInstanceRef: React.MutableRefObject<L.Map | null>
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (mapInstanceRef.current && mapInstanceRef.current !== map) {
+      try {
+        mapInstanceRef.current.remove()
+      } catch {
+        // mapa ya removido
+      }
+    }
+    mapInstanceRef.current = map
+    mapRef.current = map
+  }, [map, mapRef, mapInstanceRef])
+
+  return null
+}
+
+function ParroquiasLayer({ visible }: { visible: boolean }) {
+  const onEachFeature = useCallback((feature: GeoJSON.Feature, layer: Path) => {
+    const name = formatParishName(feature.properties?.PARROQUIA)
+    const sede = feature.properties?.CAP_PARROQ
+    const baseStyle = getParishStyle(feature)
+
+    layer.bindPopup(
+      `<div class="parroquia-popup"><strong>${name}</strong><br/><span>Parroquia de Cabimas</span>${
+        sede && sede !== 'CABIMAS' ? `<br/><small>Sede: ${sede.charAt(0)}${sede.slice(1).toLowerCase()}</small>` : ''
+      }</div>`
+    )
+
+    layer.bindTooltip(name, {
+      permanent: true,
+      direction: 'center',
+      className: 'parroquia-label',
+    })
+
+    layer.on({
+      mouseover: () => {
+        layer.setStyle({ weight: 4, fillOpacity: 0.45 })
+        layer.bringToFront()
+      },
+      mouseout: () => layer.setStyle(baseStyle),
+    })
+  }, [])
+
+  const data = useMemo(() => parroquiasCombinadas as GeoJsonObject, [])
+
+  if (!visible) return null
+
+  return (
+    <GeoJSON
+      key="parroquias-cabimas"
+      data={data}
+      style={getParishStyle}
+      onEachFeature={onEachFeature}
+    />
+  )
+}
 
 // Fix for default markers in react-leaflet
-delete L.Icon.Default.prototype._getIconUrl
+delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
 
-// Função auxiliar para obter o path SVG do ícone
-const getIconSVGPath = (iconType) => {
-  const paths = {
-    'home': '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>',
-    'shield': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
-    'fire': '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>',
-    'building': '<path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><line x1="9" y1="9" x2="9" y2="9"></line><line x1="9" y1="12" x2="9" y2="12"></line><line x1="9" y1="15" x2="9" y2="15"></line><line x1="9" y1="18" x2="9" y2="18"></line>',
-    'pin': '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>'
-  }
-  return paths[iconType] || paths['pin']
+const mapStyleConfigs = {
+  local: {
+    url: '/tile/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  streets: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution:
+      'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+  },
+  terrain: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution:
+      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
 }
 
 // Custom icons com SVG profissionais
-const createCustomIcon = (iconType, color) => {
+const createCustomIcon = (iconType: IconType, color: string) => {
   return L.divIcon({
     html: `
       <div style="
@@ -58,7 +208,7 @@ const createCustomIcon = (iconType, color) => {
 }
 
 // Iconos para veículos (emojis de carros)
-const createVehiculoIcon = (tipo) => {
+const createVehiculoIcon = (tipo: string) => {
   const iconos = {
     policia: '🚓',
     ambulancia: '🚑',
@@ -77,17 +227,10 @@ const createVehiculoIcon = (tipo) => {
   })
 }
 
-const getIconForFilter = (filter) => {
-  const iconConfig = {
-    salud: { type: 'home', color: '#3b82f6' },
-    seguridad: { type: 'shield', color: '#2563eb' },
-    bomberos: { type: 'fire', color: '#ef4444' },
-    gobierno: { type: 'building', color: '#8b5cf6' }
-  }
-  
-  const config = iconConfig[filter]
+const getIconForFilter = (filter: FilterCategory) => {
+  const config = ENTITY_LEGEND[filter]
   if (config) {
-    return createCustomIcon(config.type, config.color)
+    return createCustomIcon(config.icon, config.color)
   }
   
   // Ícone padrão profissional
@@ -134,7 +277,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
   // Atualizar posição do marker quando posicion muda
   useEffect(() => {
     if (markerRef.current && posicion) {
-      const marker = markerRef.current.leafletElement
+      const marker = getLeafletLayer(markerRef.current)
       if (marker && marker.setLatLng) {
         marker.setLatLng(posicion)
       }
@@ -145,7 +288,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
   useEffect(() => {
     if (markerRef.current) {
       const marker = markerRef.current
-      const leafletMarker = marker.leafletElement
+      const leafletMarker = getLeafletLayer(marker)
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
@@ -153,7 +296,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
           // Fechar o tooltip quando o popup abre
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
-            const leafletTooltip = tooltip.leafletElement
+            const leafletTooltip = getLeafletLayer(tooltip)
             if (leafletTooltip && leafletTooltip.close) {
               leafletTooltip.close()
             }
@@ -296,7 +439,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
           setPosicion(nuevaPos)
           // Atualizar marker diretamente
           if (markerRef.current) {
-            const marker = markerRef.current.leafletElement
+            const marker = getLeafletLayer(markerRef.current)
             if (marker && marker.setLatLng) {
               marker.setLatLng(nuevaPos)
             }
@@ -311,7 +454,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
         
         // Atualizar posição do marker diretamente via Leaflet para movimento suave
         if (markerRef.current) {
-          const marker = markerRef.current.leafletElement
+          const marker = getLeafletLayer(markerRef.current)
           if (marker && marker.setLatLng) {
             marker.setLatLng(nuevaPosicion)
           }
@@ -320,7 +463,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
 
       // Actualizar rotación del ícone basado en dirección
       if (markerRef.current && indiceRef.current < coordenadasCompletasRef.current.length - 1) {
-        const marker = markerRef.current.leafletElement
+        const marker = getLeafletLayer(markerRef.current)
         if (marker && marker._icon) {
           const dx = puntoSiguiente[1] - puntoActual[1]
           const dy = puntoSiguiente[0] - puntoActual[0]
@@ -510,7 +653,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
   // Atualizar posição do marker quando posicion muda
   useEffect(() => {
     if (markerRef.current && posicion) {
-      const marker = markerRef.current.leafletElement
+      const marker = getLeafletLayer(markerRef.current)
       if (marker && marker.setLatLng) {
         marker.setLatLng(posicion)
       }
@@ -521,7 +664,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
   useEffect(() => {
     if (markerRef.current) {
       const marker = markerRef.current
-      const leafletMarker = marker.leafletElement
+      const leafletMarker = getLeafletLayer(marker)
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
@@ -529,7 +672,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
           // Fechar o tooltip quando o popup abre
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
-            const leafletTooltip = tooltip.leafletElement
+            const leafletTooltip = getLeafletLayer(tooltip)
             if (leafletTooltip && leafletTooltip.close) {
               leafletTooltip.close()
             }
@@ -645,7 +788,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
           const nuevaPos = coordenadasCompletasRef.current[indiceRef.current]
           setPosicion(nuevaPos)
           if (markerRef.current) {
-            const marker = markerRef.current.leafletElement
+            const marker = getLeafletLayer(markerRef.current)
             if (marker && marker.setLatLng) {
               marker.setLatLng(nuevaPos)
             }
@@ -658,7 +801,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
         setPosicion(nuevaPosicion)
         
         if (markerRef.current) {
-          const marker = markerRef.current.leafletElement
+          const marker = getLeafletLayer(markerRef.current)
           if (marker && marker.setLatLng) {
             marker.setLatLng(nuevaPosicion)
           }
@@ -666,7 +809,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
       }
 
       if (markerRef.current && indiceRef.current < coordenadasCompletasRef.current.length - 1) {
-        const marker = markerRef.current.leafletElement
+        const marker = getLeafletLayer(markerRef.current)
         if (marker && marker._icon) {
           const dx = puntoSiguiente[1] - puntoActual[1]
           const dy = puntoSiguiente[0] - puntoActual[0]
@@ -822,7 +965,7 @@ function MarkerWithTooltip({ item, index, isMobile }) {
   useEffect(() => {
     if (markerRef.current) {
       const marker = markerRef.current
-      const leafletMarker = marker.leafletElement
+      const leafletMarker = getLeafletLayer(marker)
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
@@ -830,7 +973,7 @@ function MarkerWithTooltip({ item, index, isMobile }) {
           // Cerrar el tooltip cuando se abre el popup
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
-            const leafletTooltip = tooltip.leafletElement
+            const leafletTooltip = getLeafletLayer(tooltip)
             if (leafletTooltip && leafletTooltip.close) {
               leafletTooltip.close()
             }
@@ -883,7 +1026,11 @@ function MarkerWithTooltip({ item, index, isMobile }) {
   )
 }
 
-function Mapa() {
+interface MapaProps {
+  hideLegend?: boolean
+}
+
+function Mapa({ hideLegend = false }: MapaProps) {
   const [customMarker, setCustomMarker] = useState(null)
   const [addingMarker, setAddingMarker] = useState(false)
   const [tiempoMedioMode, setTiempoMedioMode] = useState(false)
@@ -904,17 +1051,43 @@ function Mapa() {
   const [rutasVisibles, setRutasVisibles] = useState(new Set()) // IDs de veículos cujas rotas estão visíveis
   const [rutasVisiblesAnimados, setRutasVisiblesAnimados] = useState(new Set()) // IDs de veículos animados cujas rotas estão visíveis
   const [rutasUsadasPorVehiculo, setRutasUsadasPorVehiculo] = useState(new Map()) // Mapa de veículoId -> Set de rutaIds usadas
-  const [filters, setFilters] = useState(['salud', 'seguridad', 'bomberos', 'gobierno'])
+  const [filters, setFilters] = useState<FilterCategory[]>([
+    'salud',
+    'seguridad',
+    'bomberos',
+    'gobierno',
+  ])
+  const [currentMapStyle, setCurrentMapStyle] = useState<MapStyle>('local')
+  const [showParroquias, setShowParroquias] = useState(true)
   const [zoom, setZoom] = useState(14)
   const [targetZoom, setTargetZoom] = useState(14)
   const [updatingZoom, setUpdatingZoom] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const mapRef = useRef(null)
-  const mapInstanceRef = useRef(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const mapInstanceRef = useRef<L.Map | null>(null)
   const rutasAleatoriasRef = useRef([])
-  const center = [10.4, -71.45]
-  const maxBounds = [[10.3, -71.55], [10.5, -71.35]]
+  const center: LatLngTuple = [10.4, -71.45]
+  const maxBounds: [LatLngTuple, LatLngTuple] = [
+    [10.3, -71.55],
+    [10.5, -71.35],
+  ]
+
+  const getCurrentMapStyle = useCallback(() => {
+    return mapStyleConfigs[currentMapStyle] || mapStyleConfigs.local
+  }, [currentMapStyle])
+
+  useEffect(() => {
+    const handleMapStyleChange = (event) => {
+      const newStyle = event.detail?.style
+      if (newStyle && mapStyleConfigs[newStyle]) {
+        setCurrentMapStyle(newStyle)
+      }
+    }
+
+    window.addEventListener('map-style-changed', handleMapStyleChange)
+    return () => window.removeEventListener('map-style-changed', handleMapStyleChange)
+  }, [])
 
   // Sincronizar ref com o estado de rutasAleatorias
   useEffect(() => {
@@ -1770,7 +1943,7 @@ function Mapa() {
       setAddingMarker(true)
       const map = mapRef.current
       if (map) {
-        const leafletMap = map.leafletElement || map
+        const leafletMap = map
         if (leafletMap) {
           leafletMap.getContainer().style.cursor = 'crosshair'
         }
@@ -1787,7 +1960,7 @@ function Mapa() {
       setCargandoRuta(false)
       const map = mapRef.current
       if (map) {
-        const leafletMap = map.leafletElement || map
+        const leafletMap = map
         if (leafletMap) {
           leafletMap.getContainer().style.cursor = ''
         }
@@ -1806,7 +1979,7 @@ function Mapa() {
         setAddingMarker(false)
         const map = mapRef.current
         if (map) {
-          const leafletMap = map.leafletElement || map
+          const leafletMap = map
           if (leafletMap) {
             leafletMap.getContainer().style.cursor = ''
           }
@@ -1826,7 +1999,7 @@ function Mapa() {
         setCargandoRuta(false)
         const map = mapRef.current
         if (map) {
-          const leafletMap = map.leafletElement || map
+          const leafletMap = map
           if (leafletMap) {
             leafletMap.getContainer().style.cursor = 'crosshair'
           }
@@ -1846,7 +2019,7 @@ function Mapa() {
       setTiempoMedioMode(false)
       const map = mapRef.current
       if (map) {
-        const leafletMap = map.leafletElement || map
+        const leafletMap = map
         if (leafletMap) {
           leafletMap.getContainer().style.cursor = ''
         }
@@ -2041,7 +2214,7 @@ function Mapa() {
     const map = mapRef.current
     if (!map) return
 
-    const leafletMap = map.leafletElement || map
+          const leafletMap = map
     if (!leafletMap || !leafletMap.getContainer) return
     
     const handleMapClick = (e) => {
@@ -2185,12 +2358,18 @@ function Mapa() {
       window.dispatchEvent(event)
     }
 
-    const zoomRange = document.getElementById('zoom-range')
-    const todosCheckbox = document.getElementById('todos-checkbox')
-    const saludCheckbox = document.getElementById('salud-checkbox')
-    const seguridadCheckbox = document.getElementById('seguridad-checkbox')
-    const bomberosCheckbox = document.getElementById('bomberos-checkbox')
-    const gobiernoCheckbox = document.getElementById('gobierno-checkbox')
+    const zoomRange = getCheckbox('zoom-range')
+    const todosCheckbox = getCheckbox('todos-checkbox')
+    const saludCheckbox = getCheckbox('salud-checkbox')
+    const seguridadCheckbox = getCheckbox('seguridad-checkbox')
+    const bomberosCheckbox = getCheckbox('bomberos-checkbox')
+    const gobiernoCheckbox = getCheckbox('gobierno-checkbox')
+    const parroquiasCheckbox = getCheckbox('parroquias-checkbox')
+
+    const handleParroquiasToggle = () => {
+      const cb = getCheckbox('parroquias-checkbox')
+      setShowParroquias(cb ? cb.checked : true)
+    }
 
     if (zoomRange) {
       zoomRange.addEventListener('input', handleZoomChange)
@@ -2216,6 +2395,11 @@ function Mapa() {
       gobiernoCheckbox.addEventListener('change', handleFilterChange)
     }
 
+    if (parroquiasCheckbox) {
+      setShowParroquias(parroquiasCheckbox.checked)
+      parroquiasCheckbox.addEventListener('change', handleParroquiasToggle)
+    }
+
     return () => {
       if (zoomRange) {
         zoomRange.removeEventListener('input', handleZoomChange)
@@ -2235,6 +2419,9 @@ function Mapa() {
       if (gobiernoCheckbox) {
         gobiernoCheckbox.removeEventListener('change', handleFilterChange)
       }
+      if (parroquiasCheckbox) {
+        parroquiasCheckbox.removeEventListener('change', handleParroquiasToggle)
+      }
     }
   }, [filters])
 
@@ -2251,11 +2438,11 @@ function Mapa() {
   }, [zoom, targetZoom])
 
   useEffect(() => {
-    const todosCheckbox = document.getElementById('todos-checkbox')
-    const saludCheckbox = document.getElementById('salud-checkbox')
-    const seguridadCheckbox = document.getElementById('seguridad-checkbox')
-    const bomberosCheckbox = document.getElementById('bomberos-checkbox')
-    const gobiernoCheckbox = document.getElementById('gobierno-checkbox')
+    const todosCheckbox = getCheckbox('todos-checkbox')
+    const saludCheckbox = getCheckbox('salud-checkbox')
+    const seguridadCheckbox = getCheckbox('seguridad-checkbox')
+    const bomberosCheckbox = getCheckbox('bomberos-checkbox')
+    const gobiernoCheckbox = getCheckbox('gobierno-checkbox')
 
     if (todosCheckbox) {
       todosCheckbox.checked = filters.length === 4
@@ -2279,9 +2466,9 @@ function Mapa() {
   }, [filters])
 
   useEffect(() => {
-    const zoomRange = document.getElementById('zoom-range')
+    const zoomRange = getCheckbox('zoom-range')
     if (zoomRange) {
-      zoomRange.value = zoom
+      zoomRange.value = String(zoom)
     }
   }, [zoom])
 
@@ -2439,25 +2626,14 @@ function Mapa() {
         maxBounds={maxBounds} 
         style={{ height: '100%', width: '100%' }}
         ref={mapRef}
-        whenCreated={(mapInstance) => {
-          // Verificar si ya existe una instancia y limpiarla
-          if (mapInstanceRef.current) {
-            try {
-              const oldMap = mapInstanceRef.current
-              if (oldMap && oldMap.remove) {
-                oldMap.remove()
-              }
-            } catch (e) {
-              // Ignorar erro si el mapa ya fue removido
-            }
-          }
-          mapInstanceRef.current = mapInstance
-        }}
       >
+        <MapInstanceSync mapRef={mapRef} mapInstanceRef={mapInstanceRef} />
         <TileLayer
-          url="/tile/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          key={currentMapStyle}
+          url={getCurrentMapStyle().url}
+          attribution={getCurrentMapStyle().attribution}
         />
+        <ParroquiasLayer visible={showParroquias} />
         {getMarkers().map((item, index) => (
           <MarkerWithTooltip key={index} item={item} index={index} isMobile={isMobile} />
         ))}
@@ -2765,6 +2941,11 @@ function Mapa() {
         })}
         <MapUpdater zoom={zoom} targetZoom={targetZoom} setZoom={setZoom} setTargetZoom={setTargetZoom} updatingZoom={updatingZoom} setUpdatingZoom={setUpdatingZoom} />
       </MapContainer>
+
+      <MapLegend
+        activeFilters={filters}
+        visible={getMarkers().length > 0 && !hideLegend}
+      />
     </div>
   )
 }
