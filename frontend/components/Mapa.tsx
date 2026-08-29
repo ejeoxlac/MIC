@@ -1476,7 +1476,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
     setCargandoRutasSalvas(true)
     try {
       console.log('🔄 Iniciando carga de rutas...')
-      const response = await fetch('/api/rutas')
+      const response = await fetch('/data/rutas.json')
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -1538,7 +1538,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
       console.log('🔄 Carregando rotas automaticamente...')
       setCargandoRutasSalvas(true)
       try {
-        const response = await fetch('/api/rutas')
+        const response = await fetch('/data/rutas.json')
         if (!response.ok) {
           throw new Error(`Error ${response.status}: No se pudo cargar el archivo de rutas`)
         }
