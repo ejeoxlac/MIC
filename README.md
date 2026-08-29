@@ -1,6 +1,6 @@
 # Mapa Interactivo de Cabimas
 
-<img width="1863" height="987" alt="image" src="https://github.com/user-attachments/assets/fdfcc5ab-660d-4068-b5f7-cbdf507840e7" />
+<img width="1860" height="939" alt="image" src="https://github.com/user-attachments/assets/6a970fa0-385c-49ac-9d97-ba96efd1d173" />
 
 Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubicaciones de las entidades publicas de Cabimas.
 
