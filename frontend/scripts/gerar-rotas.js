@@ -328,12 +328,22 @@ async function generarRutas() {
   
   // Salvar arquivo com todas as rotas
   const todasRotasPath = path.join(rutasDir, 'todas-rotas.json');
-  fs.writeFileSync(todasRotasPath, JSON.stringify(nuevasRutas, null, 2), 'utf8');
-  
+  const publicDataDir = path.join(__dirname, '..', 'public', 'data');
+  const publicRutasPath = path.join(publicDataDir, 'rutas.json');
+  const rutasJson = JSON.stringify(nuevasRutas, null, 2);
+
+  fs.writeFileSync(todasRotasPath, rutasJson, 'utf8');
+
+  if (!fs.existsSync(publicDataDir)) {
+    fs.mkdirSync(publicDataDir, { recursive: true });
+  }
+  fs.writeFileSync(publicRutasPath, rutasJson, 'utf8');
+
   console.log(`\n✨ Geração concluída!`);
   console.log(`📊 Total de rotas geradas: ${nuevasRutas.length}/30`);
   console.log(`📁 Rotas salvas em: ${rutasDir}`);
-  console.log(`📄 Arquivo consolidado: todas-rotas.json\n`);
+  console.log(`📄 Arquivo consolidado: todas-rotas.json`);
+  console.log(`🌐 Asset estático: ${publicRutasPath}\n`);
   
   if (nuevasRutas.length < 30) {
     console.log(`⚠️  Aviso: Apenas ${nuevasRutas.length} rotas foram geradas de 30 solicitadas.`);

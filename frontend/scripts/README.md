@@ -30,6 +30,7 @@ O script criará:
 - Pasta `frontend/data/rutas/` (se não existir)
 - 30 arquivos individuais: `ruta-01.json`, `ruta-02.json`, ..., `ruta-30.json`
 - Um arquivo consolidado: `todas-rotas.json` com todas as rotas
+- Copia automática para `frontend/public/data/rutas.json` (asset estático para el deploy)
 
 ## Formato das rotas
 
