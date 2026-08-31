@@ -16,6 +16,17 @@ import type { LatLngTuple, Path, PathOptions } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { createRoot } from 'react-dom/client'
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaTiktok,
+  FaTwitter,
+  FaWhatsapp,
+  FaYoutube,
+} from 'react-icons/fa'
+import { FiGlobe, FiLink } from 'react-icons/fi'
+import type { IconType as SocialIconType } from 'react-icons'
 import hospitales from '../data/hospitales.json'
 import seguridad from '../data/seguridad.json'
 import bomberos from '../data/bomberos.json'
@@ -203,6 +214,7 @@ type MapMarker = MapEntity & { type: FilterCategory }
 interface EntityLink {
   label: string
   url: string
+  icon: SocialIconType
 }
 
 const normalizeExternalUrl = (value: unknown): string | null => {
@@ -212,12 +224,40 @@ const normalizeExternalUrl = (value: unknown): string | null => {
   return /^https?:\/\//i.test(url) ? url : null
 }
 
+const getSocialIcon = (name: string, url: string): SocialIconType => {
+  const searchableValue = `${name} ${url}`.toLowerCase()
+
+  if (searchableValue.includes('instagram') || searchableValue.includes('/ig')) {
+    return FaInstagram
+  }
+  if (searchableValue.includes('facebook') || searchableValue.includes('fb')) {
+    return FaFacebook
+  }
+  if (searchableValue.includes('youtube')) {
+    return FaYoutube
+  }
+  if (searchableValue.includes('whatsapp')) {
+    return FaWhatsapp
+  }
+  if (searchableValue.includes('tiktok')) {
+    return FaTiktok
+  }
+  if (searchableValue.includes('linkedin')) {
+    return FaLinkedin
+  }
+  if (searchableValue.includes('twitter') || searchableValue.includes('/x')) {
+    return FaTwitter
+  }
+
+  return FiLink
+}
+
 const getEntityLinks = (item: MapMarker): EntityLink[] => {
   const links: EntityLink[] = []
   const paginaWeb = normalizeExternalUrl(item.paginaWeb)
 
   if (paginaWeb) {
-    links.push({ label: 'Página web', url: paginaWeb })
+    links.push({ label: 'Página web', url: paginaWeb, icon: FiGlobe })
   }
 
   for (const redSocial of item.redesSociales ?? []) {
@@ -226,6 +266,7 @@ const getEntityLinks = (item: MapMarker): EntityLink[] => {
       links.push({
         label: redSocial.nombre.trim() || 'Red social',
         url,
+        icon: getSocialIcon(redSocial.nombre, url),
       })
     }
   }
@@ -1063,11 +1104,13 @@ function MarkerWithTooltip({
             {entityLinks.map((link) => (
               <a
                 key={`${link.label}-${link.url}`}
+                className="entity-link"
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {link.label}
+                <link.icon size={16} aria-hidden="true" />
+                <span>{link.label}</span>
               </a>
             ))}
           </div>

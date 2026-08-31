@@ -289,6 +289,44 @@ body.dark-mode .leaflet-container {
   border-top: 1px solid var(--border-color);
 }
 
+.entity-links > strong {
+  margin-bottom: 2px;
+  color: var(--text-primary) !important;
+  font-size: 12px;
+}
+
+.entity-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--bg-tertiary);
+  color: var(--accent-primary) !important;
+  text-decoration: none !important;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.entity-link:hover {
+  background: var(--bg-secondary);
+  transform: translateX(2px);
+}
+
+.entity-link svg {
+  flex-shrink: 0;
+}
+
+.map-wrapper-dark .entity-link {
+  background: #1e293b;
+  border-color: #475569;
+  color: #93c5fd !important;
+}
+
+.map-wrapper-dark .entity-link:hover {
+  background: #334155;
+}
+
 /* Estilos para la barra de zoom */
 input[type="range"] {
   transition: transform 0.1s ease;

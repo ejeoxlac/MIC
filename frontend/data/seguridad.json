@@ -7,5 +7,19 @@
     "horarios": "24/7",
     "paginaWeb": "",
     "redesSociales": []
+  },
+  {
+    "nombre": "Policia Municipal de Cabimas",
+    "lat": 10.419,
+    "lng": -71.449,
+    "servicios": ["Policía", "Emergencias", "Denuncias"],
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": [
+      {
+        "nombre": "Instagram",
+        "url": "https://www.instagram.com/policabimas/"
+      }
+    ]
   }
 ]
