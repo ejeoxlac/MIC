@@ -701,6 +701,12 @@ body.dark-mode .entity-popup-watermark {
   color: var(--text-primary) !important;
 }
 
+.entity-route-picker-help {
+  margin: -3px 0 8px;
+  font-size: 11px;
+  color: var(--text-secondary) !important;
+}
+
 .entity-route-picker {
   display: flex;
   flex-direction: column;

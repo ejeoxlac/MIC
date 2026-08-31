@@ -253,6 +253,7 @@ interface NavigationRouteOption extends RouteInfo {
   id: number
   label: string
   coordinates: LatLngTuple[]
+  esDistanciaDirecta?: boolean
 }
 
 interface OsrmRouteRaw {
@@ -261,7 +262,11 @@ interface OsrmRouteRaw {
   duracion: number
 }
 
-const NAVIGATION_ROUTE_LABELS = ['Más corta', 'Alternativa 2', 'Alternativa 3'] as const
+const NAVIGATION_ROUTE_LABELS = [
+  'Más corta por calles',
+  'Alternativa 2',
+  'Alternativa 3',
+] as const
 
 const parseOsrmRoute = (route: {
   geometry: { coordinates: [number, number][] }
@@ -341,9 +346,15 @@ function RouteNavigationControls({
   }
 
   if (isActive && routeOptions.length > 0) {
+    const selectedRoute = routeOptions[selectedRouteIndex]
     return (
       <>
         <p className="entity-route-picker-title">Elige una ruta:</p>
+        <p className="entity-route-picker-help">
+          {selectedRoute?.esDistanciaDirecta
+            ? 'No se encontró una ruta por calles; se muestra la distancia directa.'
+            : 'Distancias calculadas por calles.'}
+        </p>
         <div className="entity-route-picker">
           {routeOptions.map((option, index) => (
             <button
@@ -1693,13 +1704,14 @@ function Mapa({
     return [
       {
         id: 0,
-        label: 'Más corta',
+        label: 'Distancia directa',
         coordinates: [
           [lat1, lon1],
           [lat2, lon2],
         ],
         distancia,
         tiempo: calcularTiempoMedio(distancia),
+        esDistanciaDirecta: true,
       },
     ]
   }
@@ -1757,13 +1769,14 @@ function Mapa({
       const fallbackRoute: NavigationRouteOption[] = [
         {
           id: 0,
-          label: 'Más corta',
+          label: 'Distancia directa',
           coordinates: [
             [userLocation.lat, userLocation.lng],
             [destino.lat, destino.lng],
           ],
           distancia,
           tiempo,
+          esDistanciaDirecta: true,
         },
       ]
       setOpcionesRutaHaciaPin(fallbackRoute)
