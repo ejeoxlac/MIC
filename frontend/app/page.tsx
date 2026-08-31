@@ -81,6 +81,10 @@ export default function Home() {
       setHasMarker(true)
     }
 
+    const handleMarkerRemoved = () => {
+      setHasMarker(false)
+    }
+
     const handleTiempoMedioChanged = (e: WindowEventMap['tiempo-medio-changed']) => {
       setTiempoMedioActive(e.detail.active)
     }
@@ -137,6 +141,7 @@ export default function Home() {
     }
 
     window.addEventListener('marker-added', handleMarkerAdded)
+    window.addEventListener('marker-removed', handleMarkerRemoved)
     window.addEventListener('tiempo-medio-changed', handleTiempoMedioChanged)
     window.addEventListener('tiempo-medio-calculated', handleTiempoMedioCalculated)
     window.addEventListener('tiempo-medio-cleared', handleTiempoMedioCleared)
@@ -158,6 +163,7 @@ export default function Home() {
 
     return () => {
       window.removeEventListener('marker-added', handleMarkerAdded)
+      window.removeEventListener('marker-removed', handleMarkerRemoved)
       window.removeEventListener('tiempo-medio-changed', handleTiempoMedioChanged)
       window.removeEventListener('tiempo-medio-calculated', handleTiempoMedioCalculated)
       window.removeEventListener('tiempo-medio-cleared', handleTiempoMedioCleared)

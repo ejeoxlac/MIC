@@ -24,6 +24,7 @@ declare global {
     'tiempo-medio-changed': CustomEvent<TiempoMedioChangedDetail>
     'rutas-salvas-cargadas': CustomEvent<RutasSalvasCargadasDetail>
     'marker-added': Event
+    'marker-removed': Event
     'add-marker': Event
     'remove-marker': Event
     'clear-tiempo-medio': Event

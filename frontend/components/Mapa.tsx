@@ -2723,6 +2723,20 @@ function Mapa({ hideLegend = false }: MapaProps) {
             <Popup>
               <p>Coordenadas: {customMarker[0].toFixed(6)}, {customMarker[1].toFixed(6)}</p>
               <p>Este es un marcador personalizado. Puedes arrastrarlo para cambiar su posición.</p>
+              <button
+                type="button"
+                className="pin-delete-button"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setCustomMarker(null)
+                  setAddingMarker(false)
+                  window.dispatchEvent(new CustomEvent('marker-removed'))
+                }}
+              >
+                Eliminar pin
+              </button>
             </Popup>
           </Marker>
         )}
