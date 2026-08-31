@@ -27,6 +27,7 @@ import {
   HiOutlineHome,
 } from 'react-icons/hi2'
 import type { FilterCategory, MapStyle } from '../types/map'
+import { getMapMinZoom, MAP_MAX_ZOOM } from '../types/map'
 
 type ButtonVariant =
   | 'primary'
@@ -226,6 +227,8 @@ export default function Sidebar({
     onMapStyleChange?.(newStyle)
   }
 
+  const minZoom = getMapMinZoom(selectedMapStyle)
+
   const handleAddMarkerClick = () => {
     if (hasMarker) {
       onRemoveMarker()
@@ -284,14 +287,14 @@ export default function Sidebar({
             <input
               type="range"
               id="zoom-range"
-              min="13"
-              max="16"
+              min={minZoom}
+              max={MAP_MAX_ZOOM}
               defaultValue="14"
               className={styles.zoomSlider}
             />
             <div className={styles.zoomLabels}>
-              <span>13</span>
-              <span>16</span>
+              <span>{minZoom}</span>
+              <span>{MAP_MAX_ZOOM}</span>
             </div>
           </div>
         </Section>

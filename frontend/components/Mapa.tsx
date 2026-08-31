@@ -33,6 +33,7 @@ import bomberos from '../data/bomberos.json'
 import gobierno from '../data/gobierno.json'
 import parroquiasCombinadas from '../data/parroquias-combinadas.json'
 import type { FilterCategory, IconType, MapEntity, MapStyle } from '../types/map'
+import { getMapMinZoom, MAP_MAX_ZOOM } from '../types/map'
 import { ENTITY_LEGEND, getIconSVGPath } from '../lib/mapIcons'
 import MapLegend from './MapLegend'
 import '../types/events'
@@ -1005,8 +1006,14 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
   )
 }
 
-function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, setUpdatingZoom }) {
+function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, setUpdatingZoom, minZoom }) {
   const map = useMap()
+
+  useEffect(() => {
+    if (map) {
+      map.setMinZoom(minZoom)
+    }
+  }, [map, minZoom])
 
   useEffect(() => {
     if (map) {
@@ -1173,6 +1180,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const [zoom, setZoom] = useState(14)
   const [targetZoom, setTargetZoom] = useState(14)
   const [updatingZoom, setUpdatingZoom] = useState(false)
+  const minZoom = getMapMinZoom(currentMapStyle)
   const [mounted, setMounted] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const mapRef = useRef<L.Map | null>(null)
@@ -1192,13 +1200,23 @@ function Mapa({ hideLegend = false }: MapaProps) {
     const handleMapStyleChange = (event) => {
       const newStyle = event.detail?.style
       if (newStyle && mapStyleConfigs[newStyle]) {
+        const nextMinZoom = getMapMinZoom(newStyle)
         setCurrentMapStyle(newStyle)
+        setZoom((current) => Math.max(current, nextMinZoom))
+        setTargetZoom((current) => Math.max(current, nextMinZoom))
       }
     }
 
     window.addEventListener('map-style-changed', handleMapStyleChange)
     return () => window.removeEventListener('map-style-changed', handleMapStyleChange)
   }, [])
+
+  useEffect(() => {
+    if (zoom < minZoom) {
+      setZoom(minZoom)
+      setTargetZoom(minZoom)
+    }
+  }, [minZoom, zoom])
 
   // Sincronizar ref com o estado de rutasAleatorias
   useEffect(() => {
@@ -2716,8 +2734,8 @@ function Mapa({ hideLegend = false }: MapaProps) {
         key="map-container-unique"
         center={center} 
         zoom={zoom} 
-        minZoom={13} 
-        maxZoom={16} 
+        minZoom={minZoom} 
+        maxZoom={MAP_MAX_ZOOM} 
         maxBounds={maxBounds} 
         style={{ height: '100%', width: '100%' }}
         ref={mapRef}
@@ -2728,6 +2746,8 @@ function Mapa({ hideLegend = false }: MapaProps) {
           url={getCurrentMapStyle().url}
           attribution={getCurrentMapStyle().attribution}
           className={getCurrentMapStyle().className}
+          minZoom={minZoom}
+          maxZoom={MAP_MAX_ZOOM}
         />
         <ParroquiasLayer visible={showParroquias} />
         {getMarkers().map((item) => (
@@ -3035,7 +3055,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
             />
           )
         })}
-        <MapUpdater zoom={zoom} targetZoom={targetZoom} setZoom={setZoom} setTargetZoom={setTargetZoom} updatingZoom={updatingZoom} setUpdatingZoom={setUpdatingZoom} />
+        <MapUpdater zoom={zoom} targetZoom={targetZoom} setZoom={setZoom} setTargetZoom={setTargetZoom} updatingZoom={updatingZoom} setUpdatingZoom={setUpdatingZoom} minZoom={minZoom} />
       </MapContainer>
 
       <MapLegend
