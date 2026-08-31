@@ -37,7 +37,7 @@ Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubica
 - Usa el botón "Agregar Pin" para colocar un marcador personalizable; cambia a "Eliminar Pin" para removerlo
 - Arrastra el pin personalizado para actualizar coordenadas en tiempo real
 - Usa "Mi ubicación" para mostrar tu posición con el GPS del navegador; el punto azul se actualiza en tiempo real. El mapa pedirá permiso de ubicación.
-- Con "Mi ubicación" activa, abre cualquier pin y pulsa "Cómo llegar" para ver la ruta en el mapa.
+- Con "Mi ubicación" activa, abre cualquier pin y pulsa "Cómo llegar" para ver hasta 3 rutas por calles; la más corta se muestra primero y puedes cambiar entre ellas.
 
 ## Enlaces de las entidades
 

@@ -249,6 +249,153 @@ interface RouteInfo {
   duracion?: number
 }
 
+interface NavigationRouteOption extends RouteInfo {
+  id: number
+  label: string
+  coordinates: LatLngTuple[]
+}
+
+interface OsrmRouteRaw {
+  coordinates: LatLngTuple[]
+  distancia: number
+  duracion: number
+}
+
+const NAVIGATION_ROUTE_LABELS = ['Más corta', 'Alternativa 2', 'Alternativa 3'] as const
+
+const parseOsrmRoute = (route: {
+  geometry: { coordinates: [number, number][] }
+  distance: number
+  duration: number
+}): OsrmRouteRaw => ({
+  coordinates: route.geometry.coordinates.map((coord) => [coord[1], coord[0]]),
+  distancia: route.distance / 1000,
+  duracion: route.duration,
+})
+
+const getOffsetWaypoint = (
+  start: LatLngTuple,
+  end: LatLngTuple,
+  side: 'left' | 'right',
+  offset = 0.004
+): LatLngTuple => {
+  const midLat = (start[0] + end[0]) / 2
+  const midLng = (start[1] + end[1]) / 2
+  const dLat = end[0] - start[0]
+  const dLng = end[1] - start[1]
+  const len = Math.hypot(dLat, dLng) || 1
+  const sign = side === 'left' ? 1 : -1
+  return [midLat + sign * (-dLng / len) * offset, midLng + sign * (dLat / len) * offset]
+}
+
+const areRoutesSimilar = (a: OsrmRouteRaw, b: OsrmRouteRaw) =>
+  Math.abs(a.distancia - b.distancia) < 0.12
+
+const dedupeOsrmRoutes = (routes: OsrmRouteRaw[]): OsrmRouteRaw[] => {
+  const sorted = [...routes].sort((a, b) => a.distancia - b.distancia)
+  const unique: OsrmRouteRaw[] = []
+  for (const route of sorted) {
+    if (!unique.some((existing) => areRoutesSimilar(existing, route))) {
+      unique.push(route)
+    }
+  }
+  return unique
+}
+
+const buildNavigationOptions = (
+  routes: OsrmRouteRaw[],
+  calcTimeFallback: (km: number) => string
+): NavigationRouteOption[] =>
+  dedupeOsrmRoutes(routes)
+    .slice(0, 3)
+    .map((route, index) => ({
+      id: index,
+      label: NAVIGATION_ROUTE_LABELS[index] ?? `Alternativa ${index + 1}`,
+      coordinates: route.coordinates,
+      distancia: route.distancia,
+      duracion: route.duracion,
+      tiempo: route.duracion
+        ? formatDuracionOSRM(route.duracion)
+        : calcTimeFallback(route.distancia),
+    }))
+
+function RouteNavigationControls({
+  isLoading,
+  isActive,
+  routeOptions,
+  selectedRouteIndex,
+  onNavigate,
+  onClearRoute,
+  onSelectRoute,
+}: {
+  isLoading: boolean
+  isActive: boolean
+  routeOptions: NavigationRouteOption[]
+  selectedRouteIndex: number
+  onNavigate: () => void
+  onClearRoute: () => void
+  onSelectRoute: (index: number) => void
+}) {
+  if (isLoading) {
+    return <p className="entity-route-status">Calculando rutas...</p>
+  }
+
+  if (isActive && routeOptions.length > 0) {
+    return (
+      <>
+        <p className="entity-route-picker-title">Elige una ruta:</p>
+        <div className="entity-route-picker">
+          {routeOptions.map((option, index) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`entity-route-option${selectedRouteIndex === index ? ' is-active' : ''}`}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onSelectRoute(index)
+              }}
+            >
+              <span className="entity-route-option-label">{option.label}</span>
+              <span className="entity-route-option-meta">
+                {option.tiempo} · {option.distancia.toFixed(2)} km
+              </span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="pin-navigate-button pin-navigate-button-secondary"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onClearRoute()
+          }}
+        >
+          Ocultar rutas
+        </button>
+      </>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="pin-navigate-button"
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        onNavigate()
+      }}
+    >
+      Cómo llegar
+    </button>
+  )
+}
+
 interface EntityLink {
   label: string
   url: string
@@ -1099,18 +1246,22 @@ function MarkerWithTooltip({
   canNavigate,
   isActiveDestination,
   isLoadingRoute,
-  routeInfo,
+  routeOptions,
+  selectedRouteIndex,
   onNavigate,
   onClearRoute,
+  onSelectRoute,
 }: {
   item: MapMarker
   isMobile: boolean
   canNavigate: boolean
   isActiveDestination: boolean
   isLoadingRoute: boolean
-  routeInfo: RouteInfo | null
+  routeOptions: NavigationRouteOption[]
+  selectedRouteIndex: number
   onNavigate: () => void
   onClearRoute: () => void
+  onSelectRoute: (index: number) => void
 }) {
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
@@ -1202,40 +1353,15 @@ function MarkerWithTooltip({
             )}
             {canNavigate && (
               <div className="entity-navigation">
-                {isLoadingRoute ? (
-                  <p className="entity-route-status">Calculando ruta...</p>
-                ) : isActiveDestination && routeInfo ? (
-                  <>
-                    <p className="entity-route-info">
-                      <strong>Ruta:</strong> {routeInfo.tiempo} · {routeInfo.distancia.toFixed(2)} km
-                    </p>
-                    <button
-                      type="button"
-                      className="pin-navigate-button pin-navigate-button-secondary"
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        onClearRoute()
-                      }}
-                    >
-                      Ocultar ruta
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="pin-navigate-button"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onNavigate()
-                    }}
-                  >
-                    Cómo llegar
-                  </button>
-                )}
+                <RouteNavigationControls
+                  isLoading={isLoadingRoute}
+                  isActive={isActiveDestination}
+                  routeOptions={isActiveDestination ? routeOptions : []}
+                  selectedRouteIndex={selectedRouteIndex}
+                  onNavigate={onNavigate}
+                  onClearRoute={onClearRoute}
+                  onSelectRoute={onSelectRoute}
+                />
               </div>
             )}
           </div>
@@ -1258,14 +1384,14 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const [tiempoMedio, setTiempoMedio] = useState(null)
   const [ruta, setRuta] = useState(null)
   const [cargandoRuta, setCargandoRuta] = useState(false)
-  const [rutaHaciaPin, setRutaHaciaPin] = useState<LatLngTuple[] | null>(null)
+  const [opcionesRutaHaciaPin, setOpcionesRutaHaciaPin] = useState<NavigationRouteOption[]>([])
+  const [indiceRutaHaciaPin, setIndiceRutaHaciaPin] = useState(0)
   const [destinoNavegacion, setDestinoNavegacion] = useState<{
     key: string
     nombre: string
     lat: number
     lng: number
   } | null>(null)
-  const [infoRutaHaciaPin, setInfoRutaHaciaPin] = useState<RouteInfo | null>(null)
   const [cargandoRutaHaciaPin, setCargandoRutaHaciaPin] = useState(false)
   const [rutasAleatorias, setRutasAleatorias] = useState([])
   const [cargandoRutasAleatorias, setCargandoRutasAleatorias] = useState(false)
@@ -1309,13 +1435,33 @@ function Mapa({ hideLegend = false }: MapaProps) {
     ? Math.max(20, Math.min(userLocation.accuracy, 1000))
     : 0
   const canNavigateFromLocation = locationStatus === 'tracking' && userLocation !== null
+  const rutaHaciaPinActiva = opcionesRutaHaciaPin[indiceRutaHaciaPin]?.coordinates ?? null
+  const infoRutaHaciaPinActiva = opcionesRutaHaciaPin[indiceRutaHaciaPin] ?? null
 
   const clearRutaHaciaPin = useCallback(() => {
-    setRutaHaciaPin(null)
+    setOpcionesRutaHaciaPin([])
+    setIndiceRutaHaciaPin(0)
     setDestinoNavegacion(null)
-    setInfoRutaHaciaPin(null)
     setCargandoRutaHaciaPin(false)
   }, [])
+
+  const fitRouteBounds = useCallback((coordinates: LatLngTuple[]) => {
+    const map = mapInstanceRef.current
+    if (map && coordinates.length > 0) {
+      map.fitBounds(L.latLngBounds(coordinates), { padding: [50, 50] })
+    }
+  }, [])
+
+  const selectRutaHaciaPin = useCallback(
+    (index: number) => {
+      setIndiceRutaHaciaPin(index)
+      const coordinates = opcionesRutaHaciaPin[index]?.coordinates
+      if (coordinates) {
+        fitRouteBounds(coordinates)
+      }
+    },
+    [fitRouteBounds, opcionesRutaHaciaPin]
+  )
 
   useEffect(() => {
     if (locationStatus === 'idle') {
@@ -1466,6 +1612,95 @@ function Mapa({ hideLegend = false }: MapaProps) {
     }
   }
 
+  const fetchOsrmRoutesFromCoords = async (
+    start: LatLngTuple,
+    end: LatLngTuple,
+    options?: { alternatives?: number; via?: LatLngTuple; continueStraight?: boolean }
+  ): Promise<OsrmRouteRaw[]> => {
+    try {
+      const coordString = options?.via
+        ? `${start[1]},${start[0]};${options.via[1]},${options.via[0]};${end[1]},${end[0]}`
+        : `${start[1]},${start[0]};${end[1]},${end[0]}`
+
+      const params = new URLSearchParams({
+        overview: 'full',
+        geometries: 'geojson',
+      })
+
+      if (options?.alternatives) {
+        params.set('alternatives', String(options.alternatives))
+      }
+      if (options?.continueStraight !== undefined) {
+        params.set('continue_straight', String(options.continueStraight))
+      }
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?${params}`
+      const response = await fetch(url)
+      const data = await response.json()
+
+      if (data.code === 'Ok' && data.routes?.length) {
+        return data.routes.map(parseOsrmRoute)
+      }
+      return []
+    } catch (error) {
+      console.error('Error al obtener rutas OSRM:', error)
+      return []
+    }
+  }
+
+  const obtenerRutasAlternativas = async (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): Promise<NavigationRouteOption[]> => {
+    const [startRaw, endRaw] = await Promise.all([
+      obtenerPuntoEnCalle(lat1, lon1),
+      obtenerPuntoEnCalle(lat2, lon2),
+    ])
+    const start = startRaw as LatLngTuple
+    const end = endRaw as LatLngTuple
+
+    const collected: OsrmRouteRaw[] = []
+
+    collected.push(...(await fetchOsrmRoutesFromCoords(start, end, { alternatives: 3 })))
+
+    if (dedupeOsrmRoutes(collected).length < 3) {
+      collected.push(...(await fetchOsrmRoutesFromCoords(start, end, { continueStraight: false })))
+    }
+
+    const offsetSteps = [0.004, 0.007, 0.01]
+    for (const offset of offsetSteps) {
+      if (dedupeOsrmRoutes(collected).length >= 3) break
+      for (const side of ['left', 'right'] as const) {
+        if (dedupeOsrmRoutes(collected).length >= 3) break
+        const via = getOffsetWaypoint(start, end, side, offset)
+        const viaSnapped = (await obtenerPuntoEnCalle(via[0], via[1])) as LatLngTuple
+        collected.push(...(await fetchOsrmRoutesFromCoords(start, end, { via: viaSnapped })))
+      }
+    }
+
+    const options = buildNavigationOptions(collected, calcularTiempoMedio)
+
+    if (options.length > 0) {
+      return options
+    }
+
+    const distancia = calcularDistancia(lat1, lon1, lat2, lon2)
+    return [
+      {
+        id: 0,
+        label: 'Más corta',
+        coordinates: [
+          [lat1, lon1],
+          [lat2, lon2],
+        ],
+        distancia,
+        tiempo: calcularTiempoMedio(distancia),
+      },
+    ]
+  }
+
   const navigateToPin = async (destino: {
     key: string
     nombre: string
@@ -1474,18 +1709,18 @@ function Mapa({ hideLegend = false }: MapaProps) {
   }) => {
     if (!userLocation) return
 
-    if (destinoNavegacion?.key === destino.key && rutaHaciaPin) {
-      const map = mapInstanceRef.current
-      if (map) {
-        map.fitBounds(L.latLngBounds(rutaHaciaPin), { padding: [50, 50] })
+    if (destinoNavegacion?.key === destino.key && opcionesRutaHaciaPin.length > 0) {
+      const coordinates = opcionesRutaHaciaPin[indiceRutaHaciaPin]?.coordinates
+      if (coordinates) {
+        fitRouteBounds(coordinates)
       }
       return
     }
 
     setCargandoRutaHaciaPin(true)
     setDestinoNavegacion(destino)
-    setRutaHaciaPin(null)
-    setInfoRutaHaciaPin(null)
+    setOpcionesRutaHaciaPin([])
+    setIndiceRutaHaciaPin(0)
 
     setPuntoA(null)
     setPuntoB(null)
@@ -1494,45 +1729,21 @@ function Mapa({ hideLegend = false }: MapaProps) {
     setCargandoRuta(false)
 
     try {
-      const routeData = await obtenerRuta(
+      const routeOptions = await obtenerRutasAlternativas(
         userLocation.lat,
         userLocation.lng,
         destino.lat,
         destino.lng
       )
 
-      if (routeData) {
-        setRutaHaciaPin(routeData.coordinates)
-        const tiempo = routeData.duracion
-          ? formatDuracionOSRM(routeData.duracion)
-          : calcularTiempoMedio(routeData.distancia)
-        setInfoRutaHaciaPin({
-          tiempo,
-          distancia: routeData.distancia,
-          duracion: routeData.duracion,
-        })
+      setOpcionesRutaHaciaPin(routeOptions)
+      setIndiceRutaHaciaPin(0)
 
-        const map = mapInstanceRef.current
-        if (map && routeData.coordinates.length > 0) {
-          map.fitBounds(L.latLngBounds(routeData.coordinates), { padding: [50, 50] })
-        }
-      } else {
-        const distancia = calcularDistancia(
-          userLocation.lat,
-          userLocation.lng,
-          destino.lat,
-          destino.lng
-        )
-        const tiempo = calcularTiempoMedio(distancia)
-        const fallbackRoute: LatLngTuple[] = [
-          [userLocation.lat, userLocation.lng],
-          [destino.lat, destino.lng],
-        ]
-        setRutaHaciaPin(fallbackRoute)
-        setInfoRutaHaciaPin({ tiempo, distancia })
+      if (routeOptions[0]?.coordinates.length) {
+        fitRouteBounds(routeOptions[0].coordinates)
       }
     } catch (error) {
-      console.error('Error al calcular ruta hacia el pin:', error)
+      console.error('Error al calcular rutas hacia el pin:', error)
       const distancia = calcularDistancia(
         userLocation.lat,
         userLocation.lng,
@@ -1540,11 +1751,21 @@ function Mapa({ hideLegend = false }: MapaProps) {
         destino.lng
       )
       const tiempo = calcularTiempoMedio(distancia)
-      setRutaHaciaPin([
-        [userLocation.lat, userLocation.lng],
-        [destino.lat, destino.lng],
-      ])
-      setInfoRutaHaciaPin({ tiempo, distancia })
+      const fallbackRoute: NavigationRouteOption[] = [
+        {
+          id: 0,
+          label: 'Más corta',
+          coordinates: [
+            [userLocation.lat, userLocation.lng],
+            [destino.lat, destino.lng],
+          ],
+          distancia,
+          tiempo,
+        },
+      ]
+      setOpcionesRutaHaciaPin(fallbackRoute)
+      setIndiceRutaHaciaPin(0)
+      fitRouteBounds(fallbackRoute[0].coordinates)
     } finally {
       setCargandoRutaHaciaPin(false)
     }
@@ -2856,12 +3077,35 @@ function Mapa({ hideLegend = false }: MapaProps) {
       )}
       {cargandoRutaHaciaPin && destinoNavegacion && (
         <div className="map-banner map-banner-warning">
-          Calculando ruta hacia {destinoNavegacion.nombre}...
+          Calculando rutas hacia {destinoNavegacion.nombre}...
         </div>
       )}
-      {infoRutaHaciaPin && destinoNavegacion && !cargandoRutaHaciaPin && (
+      {infoRutaHaciaPinActiva && destinoNavegacion && !cargandoRutaHaciaPin && (
         <div className="map-banner map-banner-success">
-          Ruta hacia {destinoNavegacion.nombre}: {infoRutaHaciaPin.tiempo} ({infoRutaHaciaPin.distancia.toFixed(2)} km)
+          {infoRutaHaciaPinActiva.label} hacia {destinoNavegacion.nombre}: {infoRutaHaciaPinActiva.tiempo} ({infoRutaHaciaPinActiva.distancia.toFixed(2)} km)
+        </div>
+      )}
+      {opcionesRutaHaciaPin.length > 0 && destinoNavegacion && !cargandoRutaHaciaPin && (
+        <div className="route-selector-panel">
+          <p className="route-selector-title">Rutas hacia {destinoNavegacion.nombre}</p>
+          <div className="route-selector-options">
+            {opcionesRutaHaciaPin.map((option, index) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`route-selector-option${indiceRutaHaciaPin === index ? ' is-active' : ''}`}
+                onClick={() => selectRutaHaciaPin(index)}
+              >
+                <span className="route-selector-option-label">{option.label}</span>
+                <span className="route-selector-option-meta">
+                  {option.tiempo} · {option.distancia.toFixed(2)} km
+                </span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="route-selector-clear" onClick={clearRutaHaciaPin}>
+            Ocultar rutas
+          </button>
         </div>
       )}
       {addingMarker && (
@@ -2927,7 +3171,8 @@ function Mapa({ hideLegend = false }: MapaProps) {
               canNavigate={canNavigateFromLocation}
               isActiveDestination={destinoNavegacion?.key === markerKey}
               isLoadingRoute={cargandoRutaHaciaPin && destinoNavegacion?.key === markerKey}
-              routeInfo={destinoNavegacion?.key === markerKey ? infoRutaHaciaPin : null}
+              routeOptions={destinoNavegacion?.key === markerKey ? opcionesRutaHaciaPin : []}
+              selectedRouteIndex={indiceRutaHaciaPin}
               onNavigate={() =>
                 navigateToPin({
                   key: markerKey,
@@ -2937,6 +3182,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
                 })
               }
               onClearRoute={clearRutaHaciaPin}
+              onSelectRoute={selectRutaHaciaPin}
             />
           )
         })}
@@ -3006,45 +3252,24 @@ function Mapa({ hideLegend = false }: MapaProps) {
               <p>Este es un marcador personalizado. Puedes arrastrarlo para cambiar su posición.</p>
               {canNavigateFromLocation && (
                 <div className="entity-navigation">
-                  {cargandoRutaHaciaPin && destinoNavegacion?.key === 'custom-pin' ? (
-                    <p className="entity-route-status">Calculando ruta...</p>
-                  ) : destinoNavegacion?.key === 'custom-pin' && infoRutaHaciaPin ? (
-                    <>
-                      <p className="entity-route-info">
-                        <strong>Ruta:</strong> {infoRutaHaciaPin.tiempo} · {infoRutaHaciaPin.distancia.toFixed(2)} km
-                      </p>
-                      <button
-                        type="button"
-                        className="pin-navigate-button pin-navigate-button-secondary"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          clearRutaHaciaPin()
-                        }}
-                      >
-                        Ocultar ruta
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      className="pin-navigate-button"
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        navigateToPin({
-                          key: 'custom-pin',
-                          nombre: 'Pin personalizado',
-                          lat: customMarker[0],
-                          lng: customMarker[1],
-                        })
-                      }}
-                    >
-                      Cómo llegar
-                    </button>
-                  )}
+                  <RouteNavigationControls
+                    isLoading={cargandoRutaHaciaPin && destinoNavegacion?.key === 'custom-pin'}
+                    isActive={destinoNavegacion?.key === 'custom-pin'}
+                    routeOptions={
+                      destinoNavegacion?.key === 'custom-pin' ? opcionesRutaHaciaPin : []
+                    }
+                    selectedRouteIndex={indiceRutaHaciaPin}
+                    onNavigate={() =>
+                      navigateToPin({
+                        key: 'custom-pin',
+                        nombre: 'Pin personalizado',
+                        lat: customMarker[0],
+                        lng: customMarker[1],
+                      })
+                    }
+                    onClearRoute={clearRutaHaciaPin}
+                    onSelectRoute={selectRutaHaciaPin}
+                  />
                 </div>
               )}
               <button
@@ -3145,9 +3370,9 @@ function Mapa({ hideLegend = false }: MapaProps) {
             smoothFactor={1}
           />
         )}
-        {rutaHaciaPin && rutaHaciaPin.length > 0 && (
+        {rutaHaciaPinActiva && rutaHaciaPinActiva.length > 0 && (
           <Polyline
-            positions={rutaHaciaPin}
+            positions={rutaHaciaPinActiva}
             color="#10b981"
             weight={5}
             opacity={0.9}
