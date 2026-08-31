@@ -4,6 +4,8 @@
     "lat": 10.383,
     "lng": -71.459,
     "servicios": ["Bomberos", "Rescate", "Emergencias"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   }
 ]

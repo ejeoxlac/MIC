@@ -21,7 +21,7 @@ import seguridad from '../data/seguridad.json'
 import bomberos from '../data/bomberos.json'
 import gobierno from '../data/gobierno.json'
 import parroquiasCombinadas from '../data/parroquias-combinadas.json'
-import type { FilterCategory, IconType, MapStyle } from '../types/map'
+import type { FilterCategory, IconType, MapEntity, MapStyle } from '../types/map'
 import { ENTITY_LEGEND, getIconSVGPath } from '../lib/mapIcons'
 import MapLegend from './MapLegend'
 import '../types/events'
@@ -89,15 +89,17 @@ function MapInstanceSync({
   const map = useMap()
 
   useEffect(() => {
-    if (mapInstanceRef.current && mapInstanceRef.current !== map) {
-      try {
-        mapInstanceRef.current.remove()
-      } catch {
-        // mapa ya removido
-      }
-    }
     mapInstanceRef.current = map
     mapRef.current = map
+
+    return () => {
+      if (mapInstanceRef.current === map) {
+        mapInstanceRef.current = null
+      }
+      if (mapRef.current === map) {
+        mapRef.current = null
+      }
+    }
   }, [map, mapRef, mapInstanceRef])
 
   return null
@@ -110,9 +112,16 @@ function ParroquiasLayer({ visible }: { visible: boolean }) {
     const baseStyle = getParishStyle(feature)
 
     layer.bindPopup(
-      `<div class="parroquia-popup"><strong>${name}</strong><br/><span>Parroquia de Cabimas</span>${
-        sede && sede !== 'CABIMAS' ? `<br/><small>Sede: ${sede.charAt(0)}${sede.slice(1).toLowerCase()}</small>` : ''
-      }</div>`
+      `<div class="parroquia-popup">
+        <strong>${name}</strong>
+        <span>Parroquia de Cabimas</span>
+        ${
+          sede && sede !== 'CABIMAS'
+            ? `<small>Sede: ${sede.charAt(0)}${sede.slice(1).toLowerCase()}</small>`
+            : ''
+        }
+      </div>`,
+      { className: 'parroquia-popup-container' }
     )
 
     layer.bindTooltip(name, {
@@ -152,7 +161,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
 
-const mapStyleConfigs = {
+interface MapStyleConfig {
+  url: string
+  attribution: string
+  className?: string
+}
+
+const mapStyleConfigs: Record<MapStyle, MapStyleConfig> = {
   local: {
     url: '/tile/{z}/{x}/{y}.png',
     attribution:
@@ -174,10 +189,48 @@ const mapStyleConfigs = {
       'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
   },
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    // OSM no requiere API key. El filtro CSS convierte sus teselas claras en
+    // una apariencia oscura sin depender de un proveedor con autenticación.
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    className: 'dark-map-tiles',
   },
+}
+
+type MapMarker = MapEntity & { type: FilterCategory }
+
+interface EntityLink {
+  label: string
+  url: string
+}
+
+const normalizeExternalUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null
+
+  const url = value.trim()
+  return /^https?:\/\//i.test(url) ? url : null
+}
+
+const getEntityLinks = (item: MapMarker): EntityLink[] => {
+  const links: EntityLink[] = []
+  const paginaWeb = normalizeExternalUrl(item.paginaWeb)
+
+  if (paginaWeb) {
+    links.push({ label: 'Página web', url: paginaWeb })
+  }
+
+  for (const redSocial of item.redesSociales ?? []) {
+    const url = normalizeExternalUrl(redSocial.url)
+    if (url) {
+      links.push({
+        label: redSocial.nombre.trim() || 'Red social',
+        url,
+      })
+    }
+  }
+
+  return links
 }
 
 // Custom icons com SVG profissionais
@@ -263,7 +316,6 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
   // Sempre chamar todos os hooks antes de qualquer retorno antecipado
   const [posicion, setPosicion] = useState(vehiculo.posicionInicial || [0, 0])
   const [status, setStatus] = useState('En movimiento')
-  const [popupOpen, setPopupOpen] = useState(false)
   const [coordenadasRuta, setCoordenadasRuta] = useState([])
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
@@ -292,7 +344,6 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
-          setPopupOpen(true)
           // Fechar o tooltip quando o popup abre
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
@@ -308,16 +359,10 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
           }
         }
         
-        const handlePopupClose = () => {
-          setPopupOpen(false)
-        }
-        
         leafletMarker.on('popupopen', handlePopupOpen)
-        leafletMarker.on('popupclose', handlePopupClose)
         
         return () => {
           leafletMarker.off('popupopen', handlePopupOpen)
-          leafletMarker.off('popupclose', handlePopupClose)
         }
       }
     }
@@ -590,7 +635,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
           }
         }}
       >
-        {!popupOpen && !isMobile && (
+        {!isMobile && (
           <Tooltip 
             ref={tooltipRef}
             permanent={false} 
@@ -639,7 +684,6 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
 function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMobile }) {
   const [posicion, setPosicion] = useState(vehiculo.posicionInicial || [0, 0])
   const [status, setStatus] = useState('En movimiento')
-  const [popupOpen, setPopupOpen] = useState(false)
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
   const animationRef = useRef(null)
@@ -668,7 +712,6 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
-          setPopupOpen(true)
           // Fechar o tooltip quando o popup abre
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
@@ -679,16 +722,10 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
           }
         }
         
-        const handlePopupClose = () => {
-          setPopupOpen(false)
-        }
-        
         leafletMarker.on('popupopen', handlePopupOpen)
-        leafletMarker.on('popupclose', handlePopupClose)
         
         return () => {
           leafletMarker.off('popupopen', handlePopupOpen)
-          leafletMarker.off('popupclose', handlePopupClose)
         }
       }
     }
@@ -883,7 +920,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
           }
         }}
       >
-        {!popupOpen && !isMobile && (
+        {!isMobile && (
           <Tooltip 
             ref={tooltipRef}
             permanent={false} 
@@ -957,10 +994,15 @@ function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, se
   return null
 }
 
-function MarkerWithTooltip({ item, index, isMobile }) {
+function MarkerWithTooltip({
+  item,
+  isMobile,
+}: {
+  item: MapMarker
+  isMobile: boolean
+}) {
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
-  const [popupOpen, setPopupOpen] = useState(false)
   
   useEffect(() => {
     if (markerRef.current) {
@@ -969,7 +1011,6 @@ function MarkerWithTooltip({ item, index, isMobile }) {
       
       if (leafletMarker) {
         const handlePopupOpen = () => {
-          setPopupOpen(true)
           // Cerrar el tooltip cuando se abre el popup
           if (tooltipRef.current) {
             const tooltip = tooltipRef.current
@@ -980,29 +1021,24 @@ function MarkerWithTooltip({ item, index, isMobile }) {
           }
         }
         
-        const handlePopupClose = () => {
-          setPopupOpen(false)
-        }
-        
         leafletMarker.on('popupopen', handlePopupOpen)
-        leafletMarker.on('popupclose', handlePopupClose)
         
         return () => {
           leafletMarker.off('popupopen', handlePopupOpen)
-          leafletMarker.off('popupclose', handlePopupClose)
         }
       }
     }
   }, [])
   
+  const entityLinks = getEntityLinks(item)
+
   return (
-    <Marker 
-      key={index} 
-      position={[item.lat, item.lng]} 
+    <Marker
+      position={[item.lat, item.lng]}
       icon={getIconForFilter(item.type)}
       ref={markerRef}
     >
-      {!popupOpen && !isMobile && (
+      {!isMobile && (
         <Tooltip 
           ref={tooltipRef}
           direction="top" 
@@ -1021,6 +1057,21 @@ function MarkerWithTooltip({ item, index, isMobile }) {
         <h3>{item.nombre}</h3>
         <p><strong>Servicios:</strong> {item.servicios.join(', ')}</p>
         <p><strong>Horarios:</strong> {item.horarios}</p>
+        {entityLinks.length > 0 && (
+          <div className="entity-links">
+            <strong>Enlaces:</strong>
+            {entityLinks.map((link) => (
+              <a
+                key={`${link.label}-${link.url}`}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
       </Popup>
     </Marker>
   )
@@ -1070,7 +1121,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const center: LatLngTuple = [10.4, -71.45]
   const maxBounds: [LatLngTuple, LatLngTuple] = [
     [10.3, -71.55],
-    [10.5, -71.35],
+    [10.5, -70.85],
   ]
 
   const getCurrentMapStyle = useCallback(() => {
@@ -1127,27 +1178,6 @@ function Mapa({ hideLegend = false }: MapaProps) {
   // Asegurar que el componente solo se monte en el cliente
   useEffect(() => {
     setMounted(true)
-    return () => {
-      if (mapInstanceRef.current) {
-        try {
-          const map = mapInstanceRef.current
-          if (map && map.remove) {
-            map.remove()
-          }
-        } catch (e) {
-          // Ignorar errores al limpiar
-        }
-        mapInstanceRef.current = null
-      }
-      // Limpiar el contenedor del mapa si existe
-      const mapWrapper = document.getElementById('map-wrapper')
-      if (mapWrapper) {
-        const mapContainer = mapWrapper.querySelector('.leaflet-container')
-        if (mapContainer) {
-          mapContainer.innerHTML = ''
-        }
-      }
-    }
   }, [])
 
   // Función para calcular distancia entre dos puntos (Haversine)
@@ -2472,19 +2502,19 @@ function Mapa({ hideLegend = false }: MapaProps) {
     }
   }, [zoom])
 
-  const getMarkers = () => {
-    let markers = []
+  const getMarkers = (): MapMarker[] => {
+    let markers: MapMarker[] = []
     if (filters.includes('salud')) {
-      markers = markers.concat(hospitales.map(item => ({ ...item, type: 'salud' })))
+      markers = markers.concat(hospitales.map(item => ({ ...item, type: 'salud' as const })))
     }
     if (filters.includes('seguridad')) {
-      markers = markers.concat(seguridad.map(item => ({ ...item, type: 'seguridad' })))
+      markers = markers.concat(seguridad.map(item => ({ ...item, type: 'seguridad' as const })))
     }
     if (filters.includes('bomberos')) {
-      markers = markers.concat(bomberos.map(item => ({ ...item, type: 'bomberos' })))
+      markers = markers.concat(bomberos.map(item => ({ ...item, type: 'bomberos' as const })))
     }
     if (filters.includes('gobierno')) {
-      markers = markers.concat(gobierno.map(item => ({ ...item, type: 'gobierno' })))
+      markers = markers.concat(gobierno.map(item => ({ ...item, type: 'gobierno' as const })))
     }
     return markers
   }
@@ -2494,7 +2524,12 @@ function Mapa({ hideLegend = false }: MapaProps) {
   }
 
   return (
-    <div id="map-wrapper" key="map-wrapper" style={{ position: 'relative', height: '100vh' }}>
+    <div
+      id="map-wrapper"
+      key="map-wrapper"
+      className={currentMapStyle === 'dark' ? 'map-wrapper-dark' : undefined}
+      style={{ position: 'relative', height: '100vh' }}
+    >
       {addingMarker && (
         <div style={{
           position: 'absolute',
@@ -2632,10 +2667,11 @@ function Mapa({ hideLegend = false }: MapaProps) {
           key={currentMapStyle}
           url={getCurrentMapStyle().url}
           attribution={getCurrentMapStyle().attribution}
+          className={getCurrentMapStyle().className}
         />
         <ParroquiasLayer visible={showParroquias} />
-        {getMarkers().map((item, index) => (
-          <MarkerWithTooltip key={index} item={item} index={index} isMobile={isMobile} />
+        {getMarkers().map((item) => (
+          <MarkerWithTooltip key={`${item.type}-${item.nombre}`} item={item} isMobile={isMobile} />
         ))}
         {customMarker && (
           <Marker

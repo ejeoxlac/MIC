@@ -35,3 +35,16 @@ Una aplicación web que muestra un mapa interactivo offline de Cabimas con ubica
 - Haz clic en los pines para ver información
 - Usa el botón "Agregar Pin" para colocar un marcador personalizable; cambia a "Eliminar Pin" para removerlo
 - Arrastra el pin personalizado para actualizar coordenadas en tiempo real
+
+## Enlaces de las entidades
+
+Los archivos `frontend/data/hospitales.json`, `seguridad.json`, `bomberos.json` y
+`gobierno.json` admiten una página web y varias redes sociales por entidad. Los
+enlaces aparecen en el popup del marcador cuando tienen una URL `http` o `https`:
+
+```json
+"paginaWeb": "https://ejemplo.org",
+"redesSociales": [
+  { "nombre": "Instagram", "url": "https://instagram.com/ejemplo" }
+]
+```

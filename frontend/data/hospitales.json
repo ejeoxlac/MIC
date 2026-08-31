@@ -4,34 +4,44 @@
     "lat": 10.382,
     "lng": -71.437,
     "servicios": ["Servicios de salud", "Pediatría", "Ginecología", "Medicina general", "Laboratorio clínico", "Emergencias"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   },
   {
     "nombre": "Clínica PDVSA",
     "lat": 10.379,
     "lng": -71.452,
     "servicios": ["Servicios de salud", "Medicina general", "Emergencias"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   },
   {
     "nombre": "Centro Medico Cabimas S.A.",
     "lat": 10.391,
     "lng": -71.458,
     "servicios": ["Servicios de salud", "Cirugía", "Traumatología", "Cardiología", "Medicina general", "Emergencias"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   },
   {
     "nombre": "Hospital General Dr Adolfo D' Empaire",
     "lat": 10.413,
     "lng": -71.467,
     "servicios": ["Servicios de salud", "Medicina general", "Emergencias", "Cirugía", "Traumatología", "Cardiología", "Medicina interna"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   },
   {
     "nombre": "Centro Ambulatorio nuevo Cabimas",
     "lat": 10.393,
     "lng": -71.430,
     "servicios": ["Servicios de salud", "Medicina general", "Medicina interna", "Pediatría"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   }
 ]

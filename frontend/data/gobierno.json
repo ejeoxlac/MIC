@@ -4,13 +4,17 @@
     "lat": 10.392534,
     "lng": -71.476986,
     "servicios": ["Administración municipal", "Servicios públicos"],
-    "horarios": "Lunes-Viernes 8am-3pm"
+    "horarios": "Lunes-Viernes 8am-3pm",
+    "paginaWeb": "",
+    "redesSociales": []
   },
   {
     "nombre": "Intendencia Municipal de Cabimas",
     "lat": 10.390656,
     "lng": -71.467910,
     "servicios": ["Trámites"],
-    "horarios": "Lunes-Viernes 8am-3pm"
+    "horarios": "Lunes-Viernes 8am-3pm",
+    "paginaWeb": "",
+    "redesSociales": []
   }
 ]

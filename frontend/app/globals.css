@@ -192,7 +192,11 @@ a {
 
 body.dark-mode .leaflet-container {
   background-color: #1e293b;
-  filter: brightness(0.8) contrast(1.1);
+}
+
+/* Fondo oscuro basado en teselas OSM, sin depender de una API key */
+.dark-map-tiles {
+  filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(90%);
 }
 
 .leaflet-tile-pane {
@@ -205,6 +209,84 @@ body.dark-mode .leaflet-container {
 
 .leaflet-tile {
   background-color: #87CEEB;
+}
+
+/* Popups y tooltips deben respetar el tema activo */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.leaflet-popup-content {
+  color: var(--text-primary) !important;
+  margin: 14px 16px;
+}
+
+.leaflet-popup-content h3,
+.leaflet-popup-content strong {
+  color: var(--text-primary) !important;
+}
+
+.leaflet-popup-content p {
+  color: var(--text-secondary) !important;
+}
+
+.leaflet-popup-content a {
+  color: var(--accent-primary) !important;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.leaflet-popup-close-button {
+  color: var(--text-secondary) !important;
+}
+
+.leaflet-tooltip {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: var(--bg-primary) !important;
+}
+
+/* El estilo oscuro del mapa también oscurece sus overlays, aunque el tema
+   general de la interfaz permanezca claro. */
+.map-wrapper-dark .leaflet-popup-content-wrapper,
+.map-wrapper-dark .leaflet-popup-tip,
+.map-wrapper-dark .leaflet-tooltip {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+.map-wrapper-dark .leaflet-popup-content,
+.map-wrapper-dark .leaflet-popup-content h3,
+.map-wrapper-dark .leaflet-popup-content strong,
+.map-wrapper-dark .leaflet-popup-content p,
+.map-wrapper-dark .parroquia-popup strong,
+.map-wrapper-dark .parroquia-popup span,
+.map-wrapper-dark .parroquia-popup small,
+.map-wrapper-dark .leaflet-tooltip {
+  color: #f8fafc !important;
+}
+
+.map-wrapper-dark .leaflet-tooltip-top::before {
+  border-top-color: #0f172a !important;
+}
+
+.entity-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
 }
 
 /* Estilos para la barra de zoom */
@@ -246,11 +328,25 @@ body.dark-mode .parroquia-label {
 }
 
 .parroquia-popup strong {
-  color: var(--text-primary);
-  font-size: 14px;
+  display: block;
+  color: var(--text-primary) !important;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.parroquia-popup span,
+.parroquia-popup small {
+  display: block;
+  margin-top: 5px;
 }
 
 .parroquia-popup span {
-  color: var(--text-secondary);
+  color: var(--text-secondary) !important;
   font-size: 12px;
+}
+
+.parroquia-popup small {
+  color: var(--text-secondary) !important;
+  font-size: 11px;
 }

@@ -4,6 +4,8 @@
     "lat": 10.391,
     "lng": -71.472,
     "servicios": ["Policía", "Emergencias", "Denuncias"],
-    "horarios": "24/7"
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   }
 ]

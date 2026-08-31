@@ -449,7 +449,7 @@ export default function Sidebar({
                 />
                 <Checkbox
                   id="streets-checkbox"
-                  label="🗺️ Calles"
+                  label="🗺️ OSM"
                   checked={selectedMapStyle === 'streets'}
                   onChange={() => handleMapStyleChange('streets')}
                 />
