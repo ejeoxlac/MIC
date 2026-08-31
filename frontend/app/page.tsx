@@ -16,6 +16,7 @@ export default function Home() {
   const [hasTiempoMedio, setHasTiempoMedio] = useState(false)
   const [hasRutasAleatorias, setHasRutasAleatorias] = useState(false)
   const [hasRutasSalvas, setHasRutasSalvas] = useState(false)
+  const [tramosRutasSalvasVisibles, setTramosRutasSalvasVisibles] = useState(false)
   const [vehiculosActivos, setVehiculosActivos] = useState(false)
   const [vehiculosConRutasSalvasActivos, setVehiculosConRutasSalvasActivos] = useState(false)
   const [filters, setFilters] = useState<FilterCategory[]>([
@@ -121,6 +122,7 @@ export default function Home() {
 
     const handleRutasSalvasCargadas = (e: WindowEventMap['rutas-salvas-cargadas']) => {
       setHasRutasSalvas(true)
+      setTramosRutasSalvasVisibles(true)
       if (e.detail?.count) {
         console.log(`✅ ${e.detail.count} rutas guardadas cargadas`)
       }
@@ -128,6 +130,7 @@ export default function Home() {
 
     const handleRutasSalvasLimpiadas = () => {
       setHasRutasSalvas(false)
+      setTramosRutasSalvasVisibles(false)
       setVehiculosConRutasSalvasActivos(false)
     }
 
@@ -221,6 +224,7 @@ export default function Home() {
             hasTiempoMedio={hasTiempoMedio}
             hasRutasAleatorias={hasRutasAleatorias}
             hasRutasSalvas={hasRutasSalvas}
+            tramosRutasSalvasVisibles={tramosRutasSalvasVisibles}
             vehiculosActivos={vehiculosActivos}
             vehiculosConRutasSalvasActivos={vehiculosConRutasSalvasActivos}
             filters={filters}
@@ -264,6 +268,10 @@ export default function Home() {
               window.dispatchEvent(new CustomEvent('limpiar-rutas-salvas'))
               if (isMobile) closeMobileMenu()
             }}
+            onToggleTramosRutasSalvas={() => {
+              setTramosRutasSalvasVisibles((visible) => !visible)
+              if (isMobile) closeMobileMenu()
+            }}
             onToggleVehiculos={() => {
               if (vehiculosActivos) {
                 window.dispatchEvent(new CustomEvent('desactivar-vehiculos'))
@@ -289,7 +297,10 @@ export default function Home() {
         </div>
 
         <div className="app-map-slot">
-          <Mapa hideLegend={isMobile && isMobileMenuOpen} />
+          <Mapa
+            hideLegend={isMobile && isMobileMenuOpen}
+            mostrarTramosRutasSalvas={tramosRutasSalvasVisibles}
+          />
         </div>
       </main>
     </>

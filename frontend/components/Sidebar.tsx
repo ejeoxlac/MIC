@@ -17,6 +17,8 @@ import {
   FiStopCircle,
   FiMoon,
   FiSun,
+  FiEye,
+  FiEyeOff,
   FiChevronDown,
   FiChevronUp,
   FiCrosshair,
@@ -135,6 +137,7 @@ export interface SidebarProps {
   hasTiempoMedio: boolean
   hasRutasAleatorias: boolean
   hasRutasSalvas: boolean
+  tramosRutasSalvasVisibles: boolean
   vehiculosActivos: boolean
   vehiculosConRutasSalvasActivos: boolean
   filters?: FilterCategory[]
@@ -148,6 +151,7 @@ export interface SidebarProps {
   onLimpiarRutasAleatorias: () => void
   onCargarRutasSalvas: () => void
   onLimpiarRutasSalvas: () => void
+  onToggleTramosRutasSalvas: () => void
   onToggleVehiculos: () => void
   onToggleVehiculosConRutasSalvas: () => void
   onFilterChange?: (filterId: FilterCategory | 'todos') => void
@@ -164,6 +168,7 @@ export default function Sidebar({
   hasTiempoMedio,
   hasRutasAleatorias,
   hasRutasSalvas,
+  tramosRutasSalvasVisibles,
   vehiculosActivos,
   vehiculosConRutasSalvasActivos,
   filters = [],
@@ -177,6 +182,7 @@ export default function Sidebar({
   onLimpiarRutasAleatorias,
   onCargarRutasSalvas,
   onLimpiarRutasSalvas,
+  onToggleTramosRutasSalvas,
   onToggleVehiculos,
   onToggleVehiculosConRutasSalvas,
   onFilterChange,
@@ -429,6 +435,14 @@ export default function Sidebar({
           {hasRutasSalvas && (
             <>
               <ActionButton
+                onClick={onToggleTramosRutasSalvas}
+                variant="info"
+                icon={tramosRutasSalvasVisibles ? <FiEyeOff /> : <FiEye />}
+                size="small"
+              >
+                {tramosRutasSalvasVisibles ? 'Ocultar tramos' : 'Ver tramos'}
+              </ActionButton>
+              <ActionButton
                 onClick={onLimpiarRutasSalvas}
                 variant="secondary"
                 icon={<FiTrash2 />}
@@ -442,7 +456,7 @@ export default function Sidebar({
                 icon={vehiculosConRutasSalvasActivos ? <FiStopCircle /> : <FiTruck />}
                 size="small"
               >
-                {vehiculosConRutasSalvasActivos ? 'Ocultar' : 'Mostrar'} Veículos
+                {vehiculosConRutasSalvasActivos ? 'Ocultar' : 'Mostrar'} Vehículos
               </ActionButton>
             </>
           )}

@@ -1373,9 +1373,13 @@ function MarkerWithTooltip({
 
 interface MapaProps {
   hideLegend?: boolean
+  mostrarTramosRutasSalvas?: boolean
 }
 
-function Mapa({ hideLegend = false }: MapaProps) {
+function Mapa({
+  hideLegend = false,
+  mostrarTramosRutasSalvas = false,
+}: MapaProps) {
   const [customMarker, setCustomMarker] = useState(null)
   const [addingMarker, setAddingMarker] = useState(false)
   const [tiempoMedioMode, setTiempoMedioMode] = useState(false)
@@ -1397,7 +1401,6 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const [cargandoRutasAleatorias, setCargandoRutasAleatorias] = useState(false)
   const [rutasSalvas, setRutasSalvas] = useState([])
   const [cargandoRutasSalvas, setCargandoRutasSalvas] = useState(false)
-  const [rutasSalvasCargadasManualmente, setRutasSalvasCargadasManualmente] = useState(false)
   const [vehiculos, setVehiculos] = useState([])
   const [vehiculosActivos, setVehiculosActivos] = useState(false)
   const [vehiculosConRutasSalvas, setVehiculosConRutasSalvas] = useState([])
@@ -2052,7 +2055,12 @@ function Mapa({ hideLegend = false }: MapaProps) {
   // Función para limpiar rutas guardadas
   const limpiarRutasSalvas = () => {
     setRutasSalvas([])
-    setRutasSalvasCargadasManualmente(false)
+    // Las rutas guardadas también pueden estar siendo usadas por vehículos.
+    // Limpiarlas debe desmontar esos vehículos y cancelar sus animaciones.
+    setVehiculosConRutasSalvas([])
+    setVehiculosConRutasSalvasActivos(false)
+    setRutasVisibles(new Set())
+    setRutasUsadasPorVehiculo(new Map())
     // Disparar evento para notificar que las rutas fueron limpiadas
     const event = new CustomEvent('rutas-salvas-limpiadas')
     window.dispatchEvent(event)
@@ -2385,10 +2393,11 @@ function Mapa({ hideLegend = false }: MapaProps) {
     window.dispatchEvent(event)
   }
 
-  // Callback cuando un veículo llega al destino
-  const handleVehiculoLlegada = (vehiculoId, vehiculo) => {
+  // Callback estable: cambiar el zoom o mover el mapa no debe reiniciar
+  // la animación de los vehículos con rutas guardadas.
+  const handleVehiculoLlegada = useCallback((vehiculoId, vehiculo) => {
     // Se for um veículo com rotas salvas, escolher uma nova rota
-    if (vehiculo && vehiculo.rutaOriginal) {
+    if (vehiculo && vehiculo.rutaOriginal && rutasSalvas.length > 0) {
       setRutasUsadasPorVehiculo(prev => {
         const rutasUsadas = prev.get(vehiculoId) || new Set()
         const rutasDisponibles = rutasSalvas.filter((ruta, index) => !rutasUsadas.has(index))
@@ -2469,7 +2478,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
         )
       )
     }
-  }
+  }, [rutasSalvas])
 
   // Efecto para escuchar eventos personalizados para agregar y quitar marcadores
   useEffect(() => {
@@ -3460,8 +3469,8 @@ function Mapa({ hideLegend = false }: MapaProps) {
             </Marker>
           </div>
         ))}
-        {/* Rotas salvas visíveis apenas se foram carregadas manualmente (não automaticamente) */}
-        {rutasSalvas.length > 0 && rutasSalvasCargadasManualmente && rutasSalvas.map((rutaSalva) => (
+        {/* Mostrar los tramos solo cuando el usuario lo solicita desde la barra lateral. */}
+        {rutasSalvas.length > 0 && mostrarTramosRutasSalvas && rutasSalvas.map((rutaSalva) => (
           <div key={`salva-${rutaSalva.id}`}>
             <Polyline
               positions={rutaSalva.coordinates}
