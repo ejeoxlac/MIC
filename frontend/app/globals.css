@@ -280,6 +280,40 @@ body.dark-mode .leaflet-container {
   border-top-color: #0f172a !important;
 }
 
+.entity-popup {
+  position: relative;
+  min-width: 205px;
+  overflow: hidden;
+}
+
+.entity-popup-content {
+  position: relative;
+  z-index: 1;
+}
+
+.entity-popup h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.entity-popup-watermark {
+  position: absolute;
+  right: -16px;
+  bottom: -22px;
+  z-index: 0;
+  width: 105px;
+  height: 105px;
+  transform: rotate(45deg);
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.map-wrapper-dark .entity-popup-watermark,
+body.dark-mode .entity-popup-watermark {
+  opacity: 0.2;
+}
+
 .entity-links {
   display: flex;
   flex-direction: column;

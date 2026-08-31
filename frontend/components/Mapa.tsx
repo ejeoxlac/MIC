@@ -1095,26 +1095,43 @@ function MarkerWithTooltip({
         </Tooltip>
       )}
       <Popup offset={[0, -10]}>
-        <h3>{item.nombre}</h3>
-        <p><strong>Servicios:</strong> {item.servicios.join(', ')}</p>
-        <p><strong>Horarios:</strong> {item.horarios}</p>
-        {entityLinks.length > 0 && (
-          <div className="entity-links">
-            <strong>Enlaces:</strong>
-            {entityLinks.map((link) => (
-              <a
-                key={`${link.label}-${link.url}`}
-                className="entity-link"
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <link.icon size={16} aria-hidden="true" />
-                <span>{link.label}</span>
-              </a>
-            ))}
+        <div className={`entity-popup entity-popup-${item.type}`}>
+          <svg
+            className="entity-popup-watermark"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={ENTITY_LEGEND[item.type].color}
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{
+              __html: getIconSVGPath(ENTITY_LEGEND[item.type].icon),
+            }}
+          />
+          <div className="entity-popup-content">
+            <h3>{item.nombre}</h3>
+            <p><strong>Servicios:</strong> {item.servicios.join(', ')}</p>
+            <p><strong>Horarios:</strong> {item.horarios}</p>
+            {entityLinks.length > 0 && (
+              <div className="entity-links">
+                <strong>Enlaces:</strong>
+                {entityLinks.map((link) => (
+                  <a
+                    key={`${link.label}-${link.url}`}
+                    className="entity-link"
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <link.icon size={16} aria-hidden="true" />
+                    <span>{link.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </Popup>
     </Marker>
   )
