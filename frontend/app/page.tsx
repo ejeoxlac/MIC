@@ -195,7 +195,7 @@ export default function Home() {
         <div className="app-sidebar-overlay" onClick={closeMobileMenu} />
       )}
 
-      <main className="app-shell">
+      <main className={`app-shell${isMobile && isMobileMenuOpen ? ' sidebar-open' : ''}`}>
         <div
           className={`app-sidebar-slot${isMobile ? ' is-drawer' : ''}${
             isMobile && !isMobileMenuOpen ? ' is-closed' : ''
