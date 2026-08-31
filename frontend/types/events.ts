@@ -17,6 +17,10 @@ export interface RutasSalvasCargadasDetail {
   count?: number
 }
 
+export interface MiUbicacionChangedDetail {
+  active: boolean
+}
+
 declare global {
   interface WindowEventMap {
     'map-style-changed': CustomEvent<MapStyleChangedDetail>
@@ -27,6 +31,9 @@ declare global {
     'marker-removed': Event
     'add-marker': Event
     'remove-marker': Event
+    'toggle-mi-ubicacion': Event
+    'recenter-mi-ubicacion': Event
+    'mi-ubicacion-changed': CustomEvent<MiUbicacionChangedDetail>
     'clear-tiempo-medio': Event
     'toggle-tiempo-medio': Event
     'generar-rutas-aleatorias': Event

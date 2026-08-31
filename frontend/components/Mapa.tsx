@@ -8,6 +8,7 @@ import {
   Popup,
   Tooltip,
   Polyline,
+  Circle,
   GeoJSON,
   useMap,
 } from 'react-leaflet'
@@ -33,7 +34,15 @@ import bomberos from '../data/bomberos.json'
 import gobierno from '../data/gobierno.json'
 import parroquiasCombinadas from '../data/parroquias-combinadas.json'
 import type { FilterCategory, IconType, MapEntity, MapStyle } from '../types/map'
-import { getMapMinZoom, MAP_MAX_ZOOM } from '../types/map'
+import {
+  getMapMinZoom,
+  isInsideMapBounds,
+  MAP_BOUNDS_NE,
+  MAP_BOUNDS_SW,
+  MAP_CENTER,
+  MAP_MAX_ZOOM,
+} from '../types/map'
+import { useUserLocation } from '../hooks/useUserLocation'
 import { ENTITY_LEGEND, getIconSVGPath } from '../lib/mapIcons'
 import MapLegend from './MapLegend'
 import '../types/events'
@@ -331,6 +340,20 @@ const createVehiculoIcon = (tipo: string) => {
     className: 'vehiculo-marker',
     iconSize: [35, 35],
     iconAnchor: [17, 17]
+  })
+}
+
+function createUserLocationIcon() {
+  return L.divIcon({
+    html: `
+      <div class="user-location-marker" aria-hidden="true">
+        <span class="user-location-pulse"></span>
+        <span class="user-location-dot"></span>
+      </div>
+    `,
+    className: 'user-location-icon',
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   })
 }
 
@@ -1198,11 +1221,18 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const mapRef = useRef<L.Map | null>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const rutasAleatoriasRef = useRef([])
-  const center: LatLngTuple = [10.4, -71.45]
-  const maxBounds: [LatLngTuple, LatLngTuple] = [
-    [10.3, -71.55],
-    [10.5, -70.85],
-  ]
+  const userLocationIcon = useMemo(() => createUserLocationIcon(), [])
+  const {
+    status: locationStatus,
+    location: userLocation,
+    error: locationError,
+    outsideBounds: userOutsideBounds,
+  } = useUserLocation(mapInstanceRef)
+  const center: LatLngTuple = MAP_CENTER
+  const maxBounds: [LatLngTuple, LatLngTuple] = [MAP_BOUNDS_SW, MAP_BOUNDS_NE]
+  const accuracyRadius = userLocation
+    ? Math.max(20, Math.min(userLocation.accuracy, 1000))
+    : 0
 
   const getCurrentMapStyle = useCallback(() => {
     return mapStyleConfigs[currentMapStyle] || mapStyleConfigs.local
@@ -2634,6 +2664,21 @@ function Mapa({ hideLegend = false }: MapaProps) {
         .filter(Boolean)
         .join(' ')}
     >
+      {locationError && (
+        <div className="map-banner map-banner-warning">
+          {locationError}
+        </div>
+      )}
+      {!locationError && locationStatus === 'locating' && (
+        <div className="map-banner map-banner-pin map-banner-pulse">
+          Obteniendo tu ubicación…
+        </div>
+      )}
+      {!locationError && userOutsideBounds && (
+        <div className="map-banner map-banner-warning">
+          Tu ubicación está fuera del área de Cabimas
+        </div>
+      )}
       {addingMarker && (
         <div className="map-banner map-banner-pin map-banner-pulse">
           👆 Haz clic en el mapa para agregar el pin
@@ -2690,6 +2735,37 @@ function Mapa({ hideLegend = false }: MapaProps) {
         {getMarkers().map((item) => (
           <MarkerWithTooltip key={`${item.type}-${item.nombre}`} item={item} isMobile={isMobile} />
         ))}
+        {userLocation && (
+          <>
+            <Circle
+              center={[userLocation.lat, userLocation.lng]}
+              radius={accuracyRadius}
+              pathOptions={{
+                color: '#2563eb',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.16,
+                weight: 1,
+              }}
+              interactive={false}
+            />
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={userLocationIcon}
+              zIndexOffset={2000}
+            >
+              <Popup>
+                <strong>Tu ubicación</strong>
+                <p>
+                  Coordenadas: {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+                </p>
+                <p>Precisión: {Math.round(userLocation.accuracy)} m</p>
+                {!isInsideMapBounds(userLocation.lat, userLocation.lng) && (
+                  <p>Estás fuera del área del mapa de Cabimas.</p>
+                )}
+              </Popup>
+            </Marker>
+          </>
+        )}
         {customMarker && (
           <Marker
             position={customMarker}

@@ -11,6 +11,7 @@ const Mapa = dynamic(() => import('../components/Mapa'), { ssr: false })
 
 export default function Home() {
   const [hasMarker, setHasMarker] = useState(false)
+  const [ubicacionActiva, setUbicacionActiva] = useState(false)
   const [tiempoMedioActive, setTiempoMedioActive] = useState(false)
   const [hasTiempoMedio, setHasTiempoMedio] = useState(false)
   const [hasRutasAleatorias, setHasRutasAleatorias] = useState(false)
@@ -85,6 +86,10 @@ export default function Home() {
       setHasMarker(false)
     }
 
+    const handleMiUbicacionChanged = (e: WindowEventMap['mi-ubicacion-changed']) => {
+      setUbicacionActiva(e.detail.active)
+    }
+
     const handleTiempoMedioChanged = (e: WindowEventMap['tiempo-medio-changed']) => {
       setTiempoMedioActive(e.detail.active)
     }
@@ -142,6 +147,7 @@ export default function Home() {
 
     window.addEventListener('marker-added', handleMarkerAdded)
     window.addEventListener('marker-removed', handleMarkerRemoved)
+    window.addEventListener('mi-ubicacion-changed', handleMiUbicacionChanged)
     window.addEventListener('tiempo-medio-changed', handleTiempoMedioChanged)
     window.addEventListener('tiempo-medio-calculated', handleTiempoMedioCalculated)
     window.addEventListener('tiempo-medio-cleared', handleTiempoMedioCleared)
@@ -164,6 +170,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('marker-added', handleMarkerAdded)
       window.removeEventListener('marker-removed', handleMarkerRemoved)
+      window.removeEventListener('mi-ubicacion-changed', handleMiUbicacionChanged)
       window.removeEventListener('tiempo-medio-changed', handleTiempoMedioChanged)
       window.removeEventListener('tiempo-medio-calculated', handleTiempoMedioCalculated)
       window.removeEventListener('tiempo-medio-cleared', handleTiempoMedioCleared)
@@ -209,6 +216,7 @@ export default function Home() {
         >
           <Sidebar
             hasMarker={hasMarker}
+            ubicacionActiva={ubicacionActiva}
             tiempoMedioActive={tiempoMedioActive}
             hasTiempoMedio={hasTiempoMedio}
             hasRutasAleatorias={hasRutasAleatorias}
@@ -222,6 +230,14 @@ export default function Home() {
             }}
             onRemoveMarker={() => {
               handleRemoveMarker()
+              if (isMobile) closeMobileMenu()
+            }}
+            onToggleUbicacion={() => {
+              window.dispatchEvent(new CustomEvent('toggle-mi-ubicacion'))
+              if (isMobile) closeMobileMenu()
+            }}
+            onRecenterUbicacion={() => {
+              window.dispatchEvent(new CustomEvent('recenter-mi-ubicacion'))
               if (isMobile) closeMobileMenu()
             }}
             onToggleTiempoMedio={() => {

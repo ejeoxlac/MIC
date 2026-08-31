@@ -19,6 +19,7 @@ import {
   FiSun,
   FiChevronDown,
   FiChevronUp,
+  FiCrosshair,
 } from 'react-icons/fi'
 import {
   HiOutlineBuildingOffice2,
@@ -129,6 +130,7 @@ const Checkbox = ({ id, label, checked, onChange, icon }: CheckboxProps) => {
 
 export interface SidebarProps {
   hasMarker: boolean
+  ubicacionActiva: boolean
   tiempoMedioActive: boolean
   hasTiempoMedio: boolean
   hasRutasAleatorias: boolean
@@ -138,6 +140,8 @@ export interface SidebarProps {
   filters?: FilterCategory[]
   onAddMarker: () => void
   onRemoveMarker: () => void
+  onToggleUbicacion: () => void
+  onRecenterUbicacion: () => void
   onToggleTiempoMedio: () => void
   onClearTiempoMedio: () => void
   onGenerarRutasAleatorias: () => void
@@ -155,6 +159,7 @@ export interface SidebarProps {
 
 export default function Sidebar({
   hasMarker,
+  ubicacionActiva,
   tiempoMedioActive,
   hasTiempoMedio,
   hasRutasAleatorias,
@@ -164,6 +169,8 @@ export default function Sidebar({
   filters = [],
   onAddMarker,
   onRemoveMarker,
+  onToggleUbicacion,
+  onRecenterUbicacion,
   onToggleTiempoMedio,
   onClearTiempoMedio,
   onGenerarRutasAleatorias,
@@ -350,6 +357,23 @@ export default function Sidebar({
           >
             {hasMarker ? 'Remover Pin' : addingMode ? 'Cancelar' : 'Agregar Pin'}
           </ActionButton>
+          <ActionButton
+            onClick={onToggleUbicacion}
+            variant={ubicacionActiva ? 'danger' : 'info'}
+            icon={ubicacionActiva ? <FiX /> : <FiCrosshair />}
+          >
+            {ubicacionActiva ? 'Dejar de seguir' : 'Mi ubicación'}
+          </ActionButton>
+          {ubicacionActiva && (
+            <ActionButton
+              onClick={onRecenterUbicacion}
+              variant="secondary"
+              icon={<FiNavigation />}
+              size="small"
+            >
+              Centrar en mí
+            </ActionButton>
+          )}
         </Section>
 
         <Section title="Rutas" icon={<FiNavigation />}>

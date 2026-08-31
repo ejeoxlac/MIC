@@ -11,6 +11,20 @@ export function getMapMinZoom(style: MapStyle): number {
   return style === 'local' ? MAP_MIN_ZOOM_LOCAL : MAP_MIN_ZOOM_ONLINE
 }
 
+/** Centro y límites de navegación del mapa (Cabimas). Coordenadas [lat, lng]. */
+export const MAP_CENTER: [number, number] = [10.4, -71.45]
+export const MAP_BOUNDS_SW: [number, number] = [10.3, -71.55]
+export const MAP_BOUNDS_NE: [number, number] = [10.5, -70.85]
+
+export function isInsideMapBounds(lat: number, lng: number): boolean {
+  return (
+    lat >= MAP_BOUNDS_SW[0] &&
+    lat <= MAP_BOUNDS_NE[0] &&
+    lng >= MAP_BOUNDS_SW[1] &&
+    lng <= MAP_BOUNDS_NE[1]
+  )
+}
+
 export type IconType = 'home' | 'shield' | 'fire' | 'building' | 'pin'
 
 export interface SocialNetworkLink {

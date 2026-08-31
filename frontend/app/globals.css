@@ -468,6 +468,56 @@ body.dark-mode .leaflet-container {
   border-top-color: var(--bg-primary) !important;
 }
 
+.user-location-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-location-marker {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+}
+
+.user-location-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  background: #2563eb;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 8px rgba(37, 99, 235, 0.55);
+}
+
+.user-location-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  background: rgba(37, 99, 235, 0.35);
+  border-radius: 50%;
+  animation: user-location-pulse 2s ease-out infinite;
+}
+
+@keyframes user-location-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
 /* El estilo oscuro del mapa también oscurece sus overlays, aunque el tema
    general de la interfaz permanezca claro. */
 .map-wrapper-dark .leaflet-popup-content-wrapper,
