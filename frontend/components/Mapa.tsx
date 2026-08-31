@@ -233,6 +233,22 @@ const mapStyleConfigs: Record<MapStyle, MapStyleConfig> = {
 
 type MapMarker = MapEntity & { type: FilterCategory }
 
+const getMarkerKey = (item: MapMarker) => `${item.type}-${item.nombre}`
+
+const formatDuracionOSRM = (seconds: number) => {
+  const totalMinutes = Math.max(1, Math.round(seconds / 60))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours > 0) return `${hours}h ${minutes}min`
+  return `${minutes}min`
+}
+
+interface RouteInfo {
+  tiempo: string
+  distancia: number
+  duracion?: number
+}
+
 interface EntityLink {
   label: string
   url: string
@@ -1080,9 +1096,21 @@ function MapUpdater({ zoom, targetZoom, setZoom, setTargetZoom, updatingZoom, se
 function MarkerWithTooltip({
   item,
   isMobile,
+  canNavigate,
+  isActiveDestination,
+  isLoadingRoute,
+  routeInfo,
+  onNavigate,
+  onClearRoute,
 }: {
   item: MapMarker
   isMobile: boolean
+  canNavigate: boolean
+  isActiveDestination: boolean
+  isLoadingRoute: boolean
+  routeInfo: RouteInfo | null
+  onNavigate: () => void
+  onClearRoute: () => void
 }) {
   const markerRef = useRef(null)
   const tooltipRef = useRef(null)
@@ -1172,6 +1200,44 @@ function MarkerWithTooltip({
                 ))}
               </div>
             )}
+            {canNavigate && (
+              <div className="entity-navigation">
+                {isLoadingRoute ? (
+                  <p className="entity-route-status">Calculando ruta...</p>
+                ) : isActiveDestination && routeInfo ? (
+                  <>
+                    <p className="entity-route-info">
+                      <strong>Ruta:</strong> {routeInfo.tiempo} · {routeInfo.distancia.toFixed(2)} km
+                    </p>
+                    <button
+                      type="button"
+                      className="pin-navigate-button pin-navigate-button-secondary"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onClearRoute()
+                      }}
+                    >
+                      Ocultar ruta
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="pin-navigate-button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onNavigate()
+                    }}
+                  >
+                    Cómo llegar
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </Popup>
@@ -1192,6 +1258,15 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const [tiempoMedio, setTiempoMedio] = useState(null)
   const [ruta, setRuta] = useState(null)
   const [cargandoRuta, setCargandoRuta] = useState(false)
+  const [rutaHaciaPin, setRutaHaciaPin] = useState<LatLngTuple[] | null>(null)
+  const [destinoNavegacion, setDestinoNavegacion] = useState<{
+    key: string
+    nombre: string
+    lat: number
+    lng: number
+  } | null>(null)
+  const [infoRutaHaciaPin, setInfoRutaHaciaPin] = useState<RouteInfo | null>(null)
+  const [cargandoRutaHaciaPin, setCargandoRutaHaciaPin] = useState(false)
   const [rutasAleatorias, setRutasAleatorias] = useState([])
   const [cargandoRutasAleatorias, setCargandoRutasAleatorias] = useState(false)
   const [rutasSalvas, setRutasSalvas] = useState([])
@@ -1233,6 +1308,20 @@ function Mapa({ hideLegend = false }: MapaProps) {
   const accuracyRadius = userLocation
     ? Math.max(20, Math.min(userLocation.accuracy, 1000))
     : 0
+  const canNavigateFromLocation = locationStatus === 'tracking' && userLocation !== null
+
+  const clearRutaHaciaPin = useCallback(() => {
+    setRutaHaciaPin(null)
+    setDestinoNavegacion(null)
+    setInfoRutaHaciaPin(null)
+    setCargandoRutaHaciaPin(false)
+  }, [])
+
+  useEffect(() => {
+    if (locationStatus === 'idle') {
+      clearRutaHaciaPin()
+    }
+  }, [locationStatus, clearRutaHaciaPin])
 
   const getCurrentMapStyle = useCallback(() => {
     return mapStyleConfigs[currentMapStyle] || mapStyleConfigs.local
@@ -1374,6 +1463,90 @@ function Mapa({ hideLegend = false }: MapaProps) {
     } catch (error) {
       console.error('Error al obtener la ruta:', error)
       return null
+    }
+  }
+
+  const navigateToPin = async (destino: {
+    key: string
+    nombre: string
+    lat: number
+    lng: number
+  }) => {
+    if (!userLocation) return
+
+    if (destinoNavegacion?.key === destino.key && rutaHaciaPin) {
+      const map = mapInstanceRef.current
+      if (map) {
+        map.fitBounds(L.latLngBounds(rutaHaciaPin), { padding: [50, 50] })
+      }
+      return
+    }
+
+    setCargandoRutaHaciaPin(true)
+    setDestinoNavegacion(destino)
+    setRutaHaciaPin(null)
+    setInfoRutaHaciaPin(null)
+
+    setPuntoA(null)
+    setPuntoB(null)
+    setRuta(null)
+    setTiempoMedio(null)
+    setCargandoRuta(false)
+
+    try {
+      const routeData = await obtenerRuta(
+        userLocation.lat,
+        userLocation.lng,
+        destino.lat,
+        destino.lng
+      )
+
+      if (routeData) {
+        setRutaHaciaPin(routeData.coordinates)
+        const tiempo = routeData.duracion
+          ? formatDuracionOSRM(routeData.duracion)
+          : calcularTiempoMedio(routeData.distancia)
+        setInfoRutaHaciaPin({
+          tiempo,
+          distancia: routeData.distancia,
+          duracion: routeData.duracion,
+        })
+
+        const map = mapInstanceRef.current
+        if (map && routeData.coordinates.length > 0) {
+          map.fitBounds(L.latLngBounds(routeData.coordinates), { padding: [50, 50] })
+        }
+      } else {
+        const distancia = calcularDistancia(
+          userLocation.lat,
+          userLocation.lng,
+          destino.lat,
+          destino.lng
+        )
+        const tiempo = calcularTiempoMedio(distancia)
+        const fallbackRoute: LatLngTuple[] = [
+          [userLocation.lat, userLocation.lng],
+          [destino.lat, destino.lng],
+        ]
+        setRutaHaciaPin(fallbackRoute)
+        setInfoRutaHaciaPin({ tiempo, distancia })
+      }
+    } catch (error) {
+      console.error('Error al calcular ruta hacia el pin:', error)
+      const distancia = calcularDistancia(
+        userLocation.lat,
+        userLocation.lng,
+        destino.lat,
+        destino.lng
+      )
+      const tiempo = calcularTiempoMedio(distancia)
+      setRutaHaciaPin([
+        [userLocation.lat, userLocation.lng],
+        [destino.lat, destino.lng],
+      ])
+      setInfoRutaHaciaPin({ tiempo, distancia })
+    } finally {
+      setCargandoRutaHaciaPin(false)
     }
   }
 
@@ -2088,6 +2261,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
         setRuta(null)
         setTiempoMedio(null)
         setCargandoRuta(false)
+        clearRutaHaciaPin()
       }
       // Entrar en modo de adición de marcador
       setAddingMarker(true)
@@ -2147,6 +2321,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
         setRuta(null)
         setTiempoMedio(null)
         setCargandoRuta(false)
+        clearRutaHaciaPin()
         const map = mapRef.current
         if (map) {
           const leafletMap = map
@@ -2355,7 +2530,7 @@ function Mapa({ hideLegend = false }: MapaProps) {
       window.removeEventListener('activar-vehiculos-con-rutas-salvas', handleActivarVehiculosConRutasSalvas)
       window.removeEventListener('desactivar-vehiculos-con-rutas-salvas', handleDesactivarVehiculosConRutasSalvas)
     }
-  }, [tiempoMedioMode])
+  }, [tiempoMedioMode, clearRutaHaciaPin])
 
   // Efecto para manejar clics en el mapa cuando está en modo de adición
   useEffect(() => {
@@ -2679,6 +2854,16 @@ function Mapa({ hideLegend = false }: MapaProps) {
           Tu ubicación está fuera del área de Cabimas
         </div>
       )}
+      {cargandoRutaHaciaPin && destinoNavegacion && (
+        <div className="map-banner map-banner-warning">
+          Calculando ruta hacia {destinoNavegacion.nombre}...
+        </div>
+      )}
+      {infoRutaHaciaPin && destinoNavegacion && !cargandoRutaHaciaPin && (
+        <div className="map-banner map-banner-success">
+          Ruta hacia {destinoNavegacion.nombre}: {infoRutaHaciaPin.tiempo} ({infoRutaHaciaPin.distancia.toFixed(2)} km)
+        </div>
+      )}
       {addingMarker && (
         <div className="map-banner map-banner-pin map-banner-pulse">
           👆 Haz clic en el mapa para agregar el pin
@@ -2732,9 +2917,29 @@ function Mapa({ hideLegend = false }: MapaProps) {
           visible={showParroquias}
           clickThrough={addingMarker || tiempoMedioMode}
         />
-        {getMarkers().map((item) => (
-          <MarkerWithTooltip key={`${item.type}-${item.nombre}`} item={item} isMobile={isMobile} />
-        ))}
+        {getMarkers().map((item) => {
+          const markerKey = getMarkerKey(item)
+          return (
+            <MarkerWithTooltip
+              key={markerKey}
+              item={item}
+              isMobile={isMobile}
+              canNavigate={canNavigateFromLocation}
+              isActiveDestination={destinoNavegacion?.key === markerKey}
+              isLoadingRoute={cargandoRutaHaciaPin && destinoNavegacion?.key === markerKey}
+              routeInfo={destinoNavegacion?.key === markerKey ? infoRutaHaciaPin : null}
+              onNavigate={() =>
+                navigateToPin({
+                  key: markerKey,
+                  nombre: item.nombre,
+                  lat: item.lat,
+                  lng: item.lng,
+                })
+              }
+              onClearRoute={clearRutaHaciaPin}
+            />
+          )
+        })}
         {userLocation && (
           <>
             <Circle
@@ -2799,6 +3004,49 @@ function Mapa({ hideLegend = false }: MapaProps) {
             <Popup>
               <p>Coordenadas: {customMarker[0].toFixed(6)}, {customMarker[1].toFixed(6)}</p>
               <p>Este es un marcador personalizado. Puedes arrastrarlo para cambiar su posición.</p>
+              {canNavigateFromLocation && (
+                <div className="entity-navigation">
+                  {cargandoRutaHaciaPin && destinoNavegacion?.key === 'custom-pin' ? (
+                    <p className="entity-route-status">Calculando ruta...</p>
+                  ) : destinoNavegacion?.key === 'custom-pin' && infoRutaHaciaPin ? (
+                    <>
+                      <p className="entity-route-info">
+                        <strong>Ruta:</strong> {infoRutaHaciaPin.tiempo} · {infoRutaHaciaPin.distancia.toFixed(2)} km
+                      </p>
+                      <button
+                        type="button"
+                        className="pin-navigate-button pin-navigate-button-secondary"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          clearRutaHaciaPin()
+                        }}
+                      >
+                        Ocultar ruta
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="pin-navigate-button"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        navigateToPin({
+                          key: 'custom-pin',
+                          nombre: 'Pin personalizado',
+                          lat: customMarker[0],
+                          lng: customMarker[1],
+                        })
+                      }}
+                    >
+                      Cómo llegar
+                    </button>
+                  )}
+                </div>
+              )}
               <button
                 type="button"
                 className="pin-delete-button"
@@ -2890,6 +3138,17 @@ function Mapa({ hideLegend = false }: MapaProps) {
           <Polyline
             positions={ruta}
             color="#007bff"
+            weight={5}
+            opacity={0.9}
+            lineCap="round"
+            lineJoin="round"
+            smoothFactor={1}
+          />
+        )}
+        {rutaHaciaPin && rutaHaciaPin.length > 0 && (
+          <Polyline
+            positions={rutaHaciaPin}
+            color="#10b981"
             weight={5}
             opacity={0.9}
             lineCap="round"
