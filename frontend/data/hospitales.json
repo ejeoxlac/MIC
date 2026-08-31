@@ -43,5 +43,14 @@
     "horarios": "24/7",
     "paginaWeb": "",
     "redesSociales": []
+  },
+  {
+    "nombre": "CDI Manuela Sáenz",
+    "lat": 10.404,
+    "lng": -71.465,
+    "servicios": ["Servicios de salud", "Medicina general", "Medicina interna", "Pediatría"],
+    "horarios": "24/7",
+    "paginaWeb": "",
+    "redesSociales": []
   }
 ]
