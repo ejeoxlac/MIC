@@ -225,7 +225,7 @@ body > * {
 
   .map-banner {
     top: max(12px, env(safe-area-inset-top));
-    left: max(12px, env(safe-area-inset-left));
+    left: max(72px, calc(env(safe-area-inset-left) + 64px));
     right: max(68px, calc(env(safe-area-inset-right) + 56px));
     transform: none;
     max-width: none;
