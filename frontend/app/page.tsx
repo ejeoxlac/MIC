@@ -17,6 +17,7 @@ export default function Home() {
   const [hasRutasAleatorias, setHasRutasAleatorias] = useState(false)
   const [hasRutasSalvas, setHasRutasSalvas] = useState(false)
   const [tramosRutasSalvasVisibles, setTramosRutasSalvasVisibles] = useState(false)
+  const [tramosRutasAleatoriasVisibles, setTramosRutasAleatoriasVisibles] = useState(false)
   const [vehiculosActivos, setVehiculosActivos] = useState(false)
   const [vehiculosConRutasSalvasActivos, setVehiculosConRutasSalvasActivos] = useState(false)
   const [filters, setFilters] = useState<FilterCategory[]>([
@@ -105,11 +106,13 @@ export default function Home() {
 
     const handleRutasAleatoriasGeneradas = () => {
       setHasRutasAleatorias(true)
+      setTramosRutasAleatoriasVisibles(true)
     }
 
     const handleRutasAleatoriasLimpiadas = () => {
       setHasRutasAleatorias(false)
       setVehiculosActivos(false)
+      setTramosRutasAleatoriasVisibles(false)
     }
 
     const handleVehiculosActivados = () => {
@@ -225,6 +228,7 @@ export default function Home() {
             hasRutasAleatorias={hasRutasAleatorias}
             hasRutasSalvas={hasRutasSalvas}
             tramosRutasSalvasVisibles={tramosRutasSalvasVisibles}
+            tramosRutasAleatoriasVisibles={tramosRutasAleatoriasVisibles}
             vehiculosActivos={vehiculosActivos}
             vehiculosConRutasSalvasActivos={vehiculosConRutasSalvasActivos}
             filters={filters}
@@ -272,6 +276,10 @@ export default function Home() {
               setTramosRutasSalvasVisibles((visible) => !visible)
               if (isMobile) closeMobileMenu()
             }}
+            onToggleTramosRutasAleatorias={() => {
+              setTramosRutasAleatoriasVisibles((visible) => !visible)
+              if (isMobile) closeMobileMenu()
+            }}
             onToggleVehiculos={() => {
               if (vehiculosActivos) {
                 window.dispatchEvent(new CustomEvent('desactivar-vehiculos'))
@@ -300,6 +308,7 @@ export default function Home() {
           <Mapa
             hideLegend={isMobile && isMobileMenuOpen}
             mostrarTramosRutasSalvas={tramosRutasSalvasVisibles}
+            mostrarTramosRutasAleatorias={tramosRutasAleatoriasVisibles}
           />
         </div>
       </main>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -510,11 +510,22 @@ const createVehiculoIcon = (tipo: string) => {
     bombeiros: '#ff8800'
   }
   return L.divIcon({
-    html: `<div style="background-color: ${colores[tipo]}; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transform: rotate(0deg); transition: transform 0.1s;">${iconos[tipo]}</div>`,
-    className: 'vehiculo-marker',
+    html: `<div style="background-color: ${colores[tipo]}; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transform: rotate(0deg); transform-origin: center center;">${iconos[tipo]}</div>`,
+    className: 'vehiculo-marker leaflet-div-icon-transparent',
     iconSize: [35, 35],
     iconAnchor: [17, 17]
   })
+}
+
+/** Rota el contenido del icono sin pisar el translate3d con el que Leaflet posiciona el marker. */
+function aplicarRotacionMarcador(marker: { _icon?: HTMLElement } | null, angulo: number) {
+  const iconEl = marker?._icon
+  if (!iconEl) return
+  const inner = iconEl.firstElementChild as HTMLElement | null
+  if (inner) {
+    inner.style.transform = `rotate(${angulo}deg)`
+    inner.style.transformOrigin = 'center center'
+  }
 }
 
 function createUserLocationIcon() {
@@ -576,6 +587,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
   const ultimaActualizacionRef = useRef(Date.now())
   const coordenadasCompletasRef = useRef([])
   const animacaoIniciadaRef = useRef(false)
+  const rutaIdAnteriorRef = useRef(vehiculo.rutaId)
 
   // Atualizar posição do marker quando posicion muda
   useEffect(() => {
@@ -629,6 +641,15 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       animacaoIniciadaRef.current = false
       console.log(`Veículo ${vehiculo.id} não está ativo ou não tem coordenadas`)
       return
+    }
+
+    if (rutaIdAnteriorRef.current !== vehiculo.rutaId) {
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current)
+        animationRef.current = null
+      }
+      animacaoIniciadaRef.current = false
+      rutaIdAnteriorRef.current = vehiculo.rutaId
     }
 
     // Se a animação já está rodando (verificar se há um frame ativo), não reiniciar
@@ -702,6 +723,11 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
         const puntoB = vehiculo.puntoB || coordenadasCompletasRef.current[coordenadasCompletasRef.current.length - 1]
         setPosicion(puntoB)
         setStatus('Llegó al destino')
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+          animationRef.current = null
+        }
+        animacaoIniciadaRef.current = false
         if (onLlegada) {
           onLlegada(vehiculo.id)
         }
@@ -764,8 +790,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
           const dx = puntoSiguiente[1] - puntoActual[1]
           const dy = puntoSiguiente[0] - puntoActual[0]
           const angulo = Math.atan2(dy, dx) * (180 / Math.PI)
-          marker._icon.style.transform = `rotate(${angulo + 90}deg)`
-          marker._icon.style.transition = 'transform 0.1s ease-out'
+          aplicarRotacionMarcador(marker, angulo + 90)
         }
       }
 
@@ -779,7 +804,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       // Não cancelar a animação aqui, apenas limpar quando o componente for desmontado
       // ou quando o veículo for explicitamente desativado
     }
-  }, [vehiculo.activo, vehiculo.coordenadas, vehiculo.id, onLlegada])
+  }, [vehiculo.activo, vehiculo.coordenadas, vehiculo.id, vehiculo.rutaId, onLlegada])
 
   // Cleanup quando o veículo é desativado ou componente desmontado
   useEffect(() => {
@@ -792,29 +817,15 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
     }
   }, [])
 
-  // Sempre renderizar o veículo se estiver ativo, mesmo antes da animação começar
-  if (!vehiculo.activo) {
-    return null
-  }
-
-  // Garantizar que la posición inicial sea siempre el punto A
-  const posicionFinal = posicion && posicion.length === 2 && posicion[0] !== 0 && posicion[1] !== 0 
-    ? posicion 
-    : vehiculo.posicionInicial
-
-  // Efeito para calcular coordenadas da rota quando o veículo muda
   useEffect(() => {
-    // Primeiro tentar usar as coordenadas completas do ref (se a animação já começou)
     if (coordenadasCompletasRef.current.length > 0) {
       setCoordenadasRuta(coordenadasCompletasRef.current)
       return
     }
-    
-    // Caso contrário, usar as coordenadas do veículo e garantir que incluem ponto A e B
+
     if (vehiculo.coordenadas && vehiculo.coordenadas.length > 0) {
       let coords = [...vehiculo.coordenadas]
-      
-      // Garantir que começa no ponto A
+
       if (vehiculo.posicionInicial && coords.length > 0) {
         const distanciaInicial = Math.sqrt(
           Math.pow(coords[0][0] - vehiculo.posicionInicial[0], 2) +
@@ -826,8 +837,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       } else if (vehiculo.posicionInicial && coords.length === 0) {
         coords = [vehiculo.posicionInicial]
       }
-      
-      // Garantir que termina no ponto B
+
       if (vehiculo.puntoB && coords.length > 0) {
         const ultimaCoord = coords[coords.length - 1]
         const distanciaFinal = Math.sqrt(
@@ -840,17 +850,25 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       } else if (vehiculo.puntoB && coords.length === 0) {
         coords = [vehiculo.puntoB]
       }
-      
+
       setCoordenadasRuta(coords)
     } else if (vehiculo.posicionInicial && vehiculo.puntoB) {
-      // Se não há coordenadas, criar uma rota mínima do ponto A ao B
       setCoordenadasRuta([vehiculo.posicionInicial, vehiculo.puntoB])
     } else {
       setCoordenadasRuta([])
     }
   }, [vehiculo.coordenadas, vehiculo.posicionInicial, vehiculo.puntoB])
 
-  // Cor da rota baseada no tipo de veículo
+  const iconoVehiculo = useMemo(() => createVehiculoIcon(vehiculo.tipo), [vehiculo.tipo])
+
+  if (!vehiculo.activo) {
+    return null
+  }
+
+  const posicionFinal = posicion && posicion.length === 2 && posicion[0] !== 0 && posicion[1] !== 0 
+    ? posicion 
+    : vehiculo.posicionInicial
+
   const colorRuta = vehiculo.tipo === 'policia' ? '#0077b6' : vehiculo.tipo === 'ambulancia' ? '#ff0000' : '#ff8800'
 
   return (
@@ -869,7 +887,7 @@ function VehiculoAnimado({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, isMob
       )}
       <Marker
         position={posicionFinal}
-        icon={createVehiculoIcon(vehiculo.tipo)}
+        icon={iconoVehiculo}
         ref={markerRef}
         eventHandlers={{
           click: (e) => {
@@ -1102,8 +1120,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
           const dx = puntoSiguiente[1] - puntoActual[1]
           const dy = puntoSiguiente[0] - puntoActual[0]
           const angulo = Math.atan2(dy, dx) * (180 / Math.PI)
-          marker._icon.style.transform = `rotate(${angulo + 90}deg)`
-          marker._icon.style.transition = 'transform 0.1s ease-out'
+          aplicarRotacionMarcador(marker, angulo + 90)
         }
       }
 
@@ -1132,6 +1149,8 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
   }, [])
 
 
+  const iconoVehiculo = useMemo(() => createVehiculoIcon(vehiculo.tipo), [vehiculo.tipo])
+
   if (!vehiculo.activo) {
     return null
   }
@@ -1159,7 +1178,7 @@ function VehiculoConRutaSalva({ vehiculo, onLlegada, mostrarRuta, onToggleRuta, 
       )}
       <Marker
         position={posicionFinal}
-        icon={createVehiculoIcon(vehiculo.tipo)}
+        icon={iconoVehiculo}
         ref={markerRef}
         eventHandlers={{
           click: (e) => {
@@ -1385,11 +1404,13 @@ function MarkerWithTooltip({
 interface MapaProps {
   hideLegend?: boolean
   mostrarTramosRutasSalvas?: boolean
+  mostrarTramosRutasAleatorias?: boolean
 }
 
 function Mapa({
   hideLegend = false,
   mostrarTramosRutasSalvas = false,
+  mostrarTramosRutasAleatorias = true,
 }: MapaProps) {
   const [customMarker, setCustomMarker] = useState(null)
   const [addingMarker, setAddingMarker] = useState(false)
@@ -2483,15 +2504,41 @@ function Mapa({
           return nuevo
         }
       })
-    } else {
-      // Para veículos normais (sem rotas salvas), apenas desativar
-      setVehiculos(prevVehiculos => 
-        prevVehiculos.map(v => 
-          v.id === vehiculoId ? { ...v, activo: false } : v
+    } else if (rutasAleatorias.length > 0) {
+      setVehiculos((prevVehiculos) => {
+        const rutaActual = prevVehiculos.find((v) => v.id === vehiculoId)?.rutaId
+        const ocupadas = new Set(
+          prevVehiculos.filter((v) => v.id !== vehiculoId).map((v) => v.rutaId)
         )
-      )
+        const disponibles = rutasAleatorias
+          .map((_, index) => index)
+          .filter((index) => index !== rutaActual && !ocupadas.has(index))
+        const candidatos = disponibles.length > 0
+          ? disponibles
+          : rutasAleatorias.map((_, index) => index).filter((index) => index !== rutaActual)
+        const indices = candidatos.length > 0 ? candidatos : [rutaActual ?? 0]
+        const nuevaRutaIndex = indices[Math.floor(Math.random() * indices.length)]
+        const nuevaRuta = rutasAleatorias[nuevaRutaIndex]
+
+        if (!nuevaRuta) {
+          return prevVehiculos
+        }
+
+        return prevVehiculos.map((v) =>
+          v.id === vehiculoId
+            ? {
+                ...v,
+                rutaId: nuevaRutaIndex,
+                posicionInicial: nuevaRuta.puntoA,
+                puntoB: nuevaRuta.puntoB,
+                coordenadas: nuevaRuta.coordinates,
+                activo: true,
+              }
+            : v
+        )
+      })
     }
-  }, [rutasSalvas])
+  }, [rutasSalvas, rutasAleatorias])
 
   // Efecto para escuchar eventos personalizados para agregar y quitar marcadores
   useEffect(() => {
@@ -3403,8 +3450,8 @@ function Mapa({
             smoothFactor={1}
           />
         )}
-        {rutasAleatorias.map((rutaAleatoria) => (
-          <div key={rutaAleatoria.id}>
+        {mostrarTramosRutasAleatorias && rutasAleatorias.map((rutaAleatoria) => (
+          <Fragment key={rutaAleatoria.id}>
             <Polyline
               positions={rutaAleatoria.coordinates}
               color={rutaAleatoria.color}
@@ -3480,7 +3527,7 @@ function Mapa({
                 <p><strong>Distancia:</strong> {rutaAleatoria.distancia.toFixed(2)} km</p>
               </Popup>
             </Marker>
-          </div>
+          </Fragment>
         ))}
         {/* Mostrar los tramos solo cuando el usuario lo solicita desde la barra lateral. */}
         {rutasSalvas.length > 0 && mostrarTramosRutasSalvas && rutasSalvas.map((rutaSalva) => (

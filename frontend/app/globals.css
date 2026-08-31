@@ -468,7 +468,8 @@ body.dark-mode .leaflet-container {
   border-top-color: var(--bg-primary) !important;
 }
 
-.user-location-icon.leaflet-div-icon {
+.user-location-icon.leaflet-div-icon,
+.vehiculo-marker.leaflet-div-icon {
   background: transparent !important;
   border: none !important;
 }

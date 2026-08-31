@@ -138,6 +138,7 @@ export interface SidebarProps {
   hasRutasAleatorias: boolean
   hasRutasSalvas: boolean
   tramosRutasSalvasVisibles: boolean
+  tramosRutasAleatoriasVisibles: boolean
   vehiculosActivos: boolean
   vehiculosConRutasSalvasActivos: boolean
   filters?: FilterCategory[]
@@ -152,6 +153,7 @@ export interface SidebarProps {
   onCargarRutasSalvas: () => void
   onLimpiarRutasSalvas: () => void
   onToggleTramosRutasSalvas: () => void
+  onToggleTramosRutasAleatorias: () => void
   onToggleVehiculos: () => void
   onToggleVehiculosConRutasSalvas: () => void
   onFilterChange?: (filterId: FilterCategory | 'todos') => void
@@ -169,6 +171,7 @@ export default function Sidebar({
   hasRutasAleatorias,
   hasRutasSalvas,
   tramosRutasSalvasVisibles,
+  tramosRutasAleatoriasVisibles,
   vehiculosActivos,
   vehiculosConRutasSalvasActivos,
   filters = [],
@@ -183,6 +186,7 @@ export default function Sidebar({
   onCargarRutasSalvas,
   onLimpiarRutasSalvas,
   onToggleTramosRutasSalvas,
+  onToggleTramosRutasAleatorias,
   onToggleVehiculos,
   onToggleVehiculosConRutasSalvas,
   onFilterChange,
@@ -406,6 +410,16 @@ export default function Sidebar({
           <ActionButton onClick={onGenerarRutasAleatorias} variant="purple" icon={<FiShuffle />}>
             Generar 10 Rutas
           </ActionButton>
+          {hasRutasAleatorias && (
+            <ActionButton
+              onClick={onToggleTramosRutasAleatorias}
+              variant="info"
+              icon={tramosRutasAleatoriasVisibles ? <FiEyeOff /> : <FiEye />}
+              size="small"
+            >
+              {tramosRutasAleatoriasVisibles ? 'Ocultar tramos' : 'Ver tramos'}
+            </ActionButton>
+          )}
           {hasRutasAleatorias && (
             <ActionButton
               onClick={onLimpiarRutasAleatorias}
