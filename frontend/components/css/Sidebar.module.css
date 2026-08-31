@@ -1,8 +1,8 @@
 /* Sidebar Principal */
 .sidebar {
-  width: 280px;
-  min-width: 280px;
-  height: 100vh;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
   background: var(--bg-primary);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -41,6 +41,20 @@
 
 :global(body.dark-mode) .sidebarHeader {
   background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .darkMode {
@@ -515,15 +529,16 @@
 
 /* Estilos para móvil */
 .mobileSidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
+  top: auto;
+  left: auto;
   width: 100%;
-  height: 100vh;
-  z-index: 1000;
+  height: 100%;
+  z-index: auto;
   max-height: none;
   border-right: none;
   box-shadow: var(--shadow-lg);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .closeButton {
@@ -552,13 +567,14 @@
 }
 
 /* Responsividade */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar:not(.mobileSidebar) {
     display: none;
   }
   
   .sidebarHeader {
     padding: 20px 16px;
+    padding-top: max(20px, env(safe-area-inset-top));
   }
   
   .title {

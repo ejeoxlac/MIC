@@ -117,11 +117,28 @@ function MapInstanceSync({
   return null
 }
 
-function ParroquiasLayer({ visible }: { visible: boolean }) {
+function ParroquiasLayer({
+  visible,
+  clickThrough = false,
+}: {
+  visible: boolean
+  clickThrough?: boolean
+}) {
   const onEachFeature = useCallback((feature: GeoJSON.Feature, layer: Path) => {
     const name = formatParishName(feature.properties?.PARROQUIA)
     const sede = feature.properties?.CAP_PARROQ
     const baseStyle = getParishStyle(feature)
+
+    layer.bindTooltip(name, {
+      permanent: true,
+      direction: 'center',
+      className: 'parroquia-label',
+    })
+
+    if (clickThrough) {
+      layer.off('click')
+      return
+    }
 
     layer.bindPopup(
       `<div class="parroquia-popup">
@@ -136,12 +153,6 @@ function ParroquiasLayer({ visible }: { visible: boolean }) {
       { className: 'parroquia-popup-container' }
     )
 
-    layer.bindTooltip(name, {
-      permanent: true,
-      direction: 'center',
-      className: 'parroquia-label',
-    })
-
     layer.on({
       mouseover: () => {
         layer.setStyle({ weight: 4, fillOpacity: 0.45 })
@@ -149,7 +160,7 @@ function ParroquiasLayer({ visible }: { visible: boolean }) {
       },
       mouseout: () => layer.setStyle(baseStyle),
     })
-  }, [])
+  }, [clickThrough])
 
   const data = useMemo(() => parroquiasCombinadas as GeoJsonObject, [])
 
@@ -157,10 +168,11 @@ function ParroquiasLayer({ visible }: { visible: boolean }) {
 
   return (
     <GeoJSON
-      key="parroquias-cabimas"
+      key={`parroquias-cabimas-${clickThrough ? 'through' : 'on'}`}
       data={data}
       style={getParishStyle}
       onEachFeature={onEachFeature}
+      interactive={!clickThrough}
     />
   )
 }
@@ -2328,13 +2340,22 @@ function Mapa({ hideLegend = false }: MapaProps) {
     const handleMapClick = (e) => {
       // Prevenir que el click se propague a los marcadores
       if (e.originalEvent) {
-        const target = e.originalEvent.target
-        // Si el click fue en un marcador, popup o tooltip, ignorar
-        if (target.closest('.leaflet-marker-icon') || 
-            target.closest('.leaflet-popup') || 
-            target.closest('.leaflet-tooltip') ||
-            target.closest('.leaflet-marker-pane')) {
-          return
+        const target = e.originalEvent.target as HTMLElement | null
+        if (target?.closest) {
+          const onParishOverlay =
+            target.closest('.parroquia-label') ||
+            target.closest('.leaflet-overlay-pane')
+
+          if (!onParishOverlay) {
+            if (
+              target.closest('.leaflet-marker-icon') ||
+              target.closest('.leaflet-popup') ||
+              target.closest('.leaflet-tooltip') ||
+              target.closest('.leaflet-marker-pane')
+            ) {
+              return
+            }
+          }
         }
       }
       
@@ -2598,135 +2619,48 @@ function Mapa({ hideLegend = false }: MapaProps) {
   }
 
   if (!mounted) {
-    return <div id="map-wrapper-placeholder" style={{ position: 'relative', height: '100vh' }} />
+    return <div id="map-wrapper-placeholder" className="map-wrapper" />
   }
 
   return (
     <div
       id="map-wrapper"
       key="map-wrapper"
-      className={currentMapStyle === 'dark' ? 'map-wrapper-dark' : undefined}
-      style={{ position: 'relative', height: '100vh' }}
+      className={[
+        'map-wrapper',
+        currentMapStyle === 'dark' ? 'map-wrapper-dark' : '',
+        addingMarker || tiempoMedioMode ? 'map-placing-pin' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {addingMarker && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#0077b6',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none',
-          animation: 'pulse 2s infinite'
-        }}>
+        <div className="map-banner map-banner-pin map-banner-pulse">
           👆 Haz clic en el mapa para agregar el pin
         </div>
       )}
       {tiempoMedioMode && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#28a745',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none',
-          animation: 'pulse 2s infinite'
-        }}>
+        <div className="map-banner map-banner-success map-banner-pulse">
           {!puntoA ? '👆 Haz clic para marcar el Punto A' : '👆 Haz clic para marcar el Punto B'}
         </div>
       )}
       {cargandoRuta && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#ffc107',
-          color: '#333',
-          padding: '15px 30px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none'
-        }}>
+        <div className="map-banner map-banner-warning">
           ⏳ Calculando ruta...
         </div>
       )}
       {cargandoRutasAleatorias && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#9b59b6',
-          color: 'white',
-          padding: '15px 30px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none'
-        }}>
+        <div className="map-banner map-banner-purple">
           ⏳ Generando 10 rutas aleatorias...
         </div>
       )}
       {cargandoRutasSalvas && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#16a085',
-          color: 'white',
-          padding: '15px 30px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none'
-        }}>
+        <div className="map-banner map-banner-teal">
           ⏳ Cargando rutas guardadas...
         </div>
       )}
       {tiempoMedio && !cargandoRuta && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          backgroundColor: '#28a745',
-          color: 'white',
-          padding: '15px 30px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-          fontSize: '18px',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          pointerEvents: 'none'
-        }}>
+        <div className="map-banner map-banner-success">
           ⏱️ Tiempo medio: {tiempoMedio.tiempo} ({tiempoMedio.distancia.toFixed(2)} km)
         </div>
       )}
@@ -2749,7 +2683,10 @@ function Mapa({ hideLegend = false }: MapaProps) {
           minZoom={minZoom}
           maxZoom={MAP_MAX_ZOOM}
         />
-        <ParroquiasLayer visible={showParroquias} />
+        <ParroquiasLayer
+          visible={showParroquias}
+          clickThrough={addingMarker || tiempoMedioMode}
+        />
         {getMarkers().map((item) => (
           <MarkerWithTooltip key={`${item.type}-${item.nombre}`} item={item} isMobile={isMobile} />
         ))}

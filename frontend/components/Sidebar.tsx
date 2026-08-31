@@ -176,6 +176,7 @@ export default function Sidebar({
   onMapStyleChange,
   isMobile = false,
   currentMapStyle = 'local',
+  onClose,
 }: SidebarProps) {
   const [addingMode, setAddingMode] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
@@ -257,26 +258,28 @@ export default function Sidebar({
       className={`${styles.sidebar} ${darkMode ? styles.darkMode : ''} ${isMobile ? styles.mobileSidebar : ''}`}
     >
       <div className={styles.sidebarHeader}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            width: '100%',
-          }}
-        >
+        <div className={styles.headerRow}>
           <div>
             <h1 className={styles.title}>Mapa Interactivo</h1>
             <p className={styles.subtitle}>Cabimas</p>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={styles.headerActions}>
             <button
               onClick={toggleDarkMode}
               className={styles.themeToggle}
-              aria-label="Alternar modo escuro"
+              aria-label="Alternar modo oscuro"
             >
               {darkMode ? <FiSun /> : <FiMoon />}
             </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className={styles.closeButton}
+                aria-label="Cerrar menú"
+              >
+                <FiX />
+              </button>
+            )}
           </div>
         </div>
       </div>

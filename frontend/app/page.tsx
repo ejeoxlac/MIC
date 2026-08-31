@@ -67,7 +67,7 @@ export default function Home() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
+      setIsMobile(window.innerWidth <= 1024)
     }
 
     checkMobile()
@@ -185,24 +185,6 @@ export default function Home() {
         <button
           className="hamburger-button"
           onClick={toggleMobileMenu}
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            zIndex: 1001,
-            background: 'var(--bg-primary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            width: '48px',
-            height: '48px',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-md)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--text-primary)',
-            transition: 'all 0.2s ease',
-          }}
           aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
         >
           {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -210,40 +192,14 @@ export default function Home() {
       )}
 
       {isMobile && isMobileMenuOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 998,
-          }}
-          onClick={closeMobileMenu}
-        />
+        <div className="app-sidebar-overlay" onClick={closeMobileMenu} />
       )}
 
-      <main
-        style={{
-          display: 'flex',
-          height: '100vh',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
+      <main className="app-shell">
         <div
-          style={{
-            transition: isMobile ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
-            transform: isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
-            position: isMobile ? 'fixed' : 'relative',
-            top: isMobile ? 0 : 'auto',
-            left: isMobile ? 0 : 'auto',
-            zIndex: isMobile ? 999 : 'auto',
-            height: isMobile ? '100vh' : 'auto',
-            width: isMobile ? '85vw' : '280px',
-            maxWidth: isMobile ? '320px' : 'none',
-          }}
+          className={`app-sidebar-slot${isMobile ? ' is-drawer' : ''}${
+            isMobile && !isMobileMenuOpen ? ' is-closed' : ''
+          }`}
         >
           <Sidebar
             hasMarker={hasMarker}
@@ -310,13 +266,7 @@ export default function Home() {
           />
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="app-map-slot">
           <Mapa hideLegend={isMobile && isMobileMenuOpen} />
         </div>
       </main>
